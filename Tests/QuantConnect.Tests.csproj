@@ -155,6 +155,9 @@
     <Compile Include="Indicators\RateOfChangePercentTests.cs" />
     <Compile Include="Indicators\RateOfChangeTests.cs" />
     <Compile Include="Indicators\StochasticTests.cs" />
+    <Compile Include="JJAlgorithms\DecycleInverseFisherTest.cs" />
+    <Compile Include="JJAlgorithms\ItrendStrategyTest.cs" />
+    <Compile Include="JJAlgorithms\MSAlgorithmTest.cs" />
     <Compile Include="Queues\FileCommandQueueHandlerTests.cs" />
     <Compile Include="RegressionTests.cs" />
     <Compile Include="TestExtensions.cs" />

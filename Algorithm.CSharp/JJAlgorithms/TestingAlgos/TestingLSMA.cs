@@ -19,7 +19,7 @@ namespace QuantConnect
     {
         #region Fields
         private static string symbol = "SPY";
-        LeastSquaredMovingAverage LSMA;
+        LeastSquaresMovingAverage LSMA;
         StringBuilder logResult = new StringBuilder();
         #endregion
 
@@ -34,7 +34,7 @@ namespace QuantConnect
             AddSecurity(SecurityType.Equity, symbol, Resolution.Daily);
             var close = Identity(symbol);
 
-            LSMA = new LeastSquaredMovingAverage(20);
+            LSMA = new LeastSquaresMovingAverage(20);
             RegisterIndicator(symbol, LSMA, Resolution.Daily, Field.Close);
             
             var chart = new Chart("Plot");

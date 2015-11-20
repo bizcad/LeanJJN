@@ -46,6 +46,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AverageDirectionalIndex.cs" />
+    <Compile Include="CustomIndicators\AutocorrelogramPeriodogram.cs" />
+    <Compile Include="CustomIndicators\CyberCycle.cs" />
+    <Compile Include="CustomIndicators\CyclePeriod.cs" />
+    <Compile Include="CustomIndicators\CyclePeriodHomodyme.cs" />
+    <Compile Include="CustomIndicators\Decycle.cs" />
+    <Compile Include="CustomIndicators\FisherTransform.cs" />
+    <Compile Include="CustomIndicators\HighPassFilter.cs" />
+    <Compile Include="CustomIndicators\HullMovingAverage.cs" />
+    <Compile Include="CustomIndicators\InstantaneousTrend.cs" />
+    <Compile Include="CustomIndicators\InverseFisherTransform.cs" />
+    <Compile Include="CustomIndicators\RelativeVigorIndex.cs" />
+    <Compile Include="CustomIndicators\SuperSmoother.cs" />
     <Compile Include="DonchianChannel.cs" />
     <Compile Include="IchimokuKinkoHyo.cs" />
     <Compile Include="KeltnerChannels.cs" />

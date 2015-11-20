@@ -3,7 +3,7 @@
 namespace QuantConnect.Algorithm.CSharp
 {
     public interface IStrategy
-    {      
+    {
         /// <summary>
         /// Checks the for signals.
         /// </summary>
