@@ -25,7 +25,7 @@ namespace QuantConnect.Tests
             IndicatorDataPoint ssObs;
 
             Indicator smoothedSeries = new Identity("SmoothedSeries");
-            MSAStrategy strategy = new MSAStrategy(smoothedSeries, 2, 3);
+            MSAStrategy strategy = new MSAStrategy(smoothedSeries, 2, 3, 0m);
 
             #endregion Fields
 

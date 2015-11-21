@@ -72,13 +72,13 @@ namespace QuantConnect.Algorithm.CSharp
         /// <param name="smoothedSeries">The smoothed series.</param>
         /// <param name="previousDaysN">How many daily means will be used to estimate the thresholds.</param>
         /// <param name="runsPerDay">How many runs will be used to estimate the daily mean.</param>
-        public MSAStrategy(IndicatorBase<IndicatorDataPoint> smoothedSeries, int previousDaysN=3, int runsPerDay=5, decimal minRunThreshold = 0.0001m)
+        public MSAStrategy(IndicatorBase<IndicatorDataPoint> smoothedSeries, int previousDaysN = 3, int runsPerDay = 5, decimal minRunThreshold = 0.0001m)
         {
             _runsPerDay = runsPerDay;
             _actualRun = 1m;
             _turnAround = false;
             _minRunThreshold = minRunThreshold;
-            
+
             _smoothedSeries = smoothedSeries;
             _smoothedSeriesROC = new RateOfChange(1).Of(_smoothedSeries);
             _SSROCRW = new RollingWindow<IndicatorDataPoint>(2);
@@ -146,13 +146,8 @@ namespace QuantConnect.Algorithm.CSharp
             _todayRuns.Add(_actualRun);
 
             decimal todayMeanDownwardRun;
+            decimal todayMeanUpwardRun;
 
-            todayMeanDownwardRun = (_todayRuns.Count(runs => runs < 1m - _minRunThreshold) == 0) ?
-                                    1m - _minRunThreshold :
-                                    (from run in _todayRuns
-                                     where run < 1 - _minRunThreshold
-                                     orderby run ascending
-                                     select run).Take(_runsPerDay).Average();
 
             // Estimate the daily upward and downward mean.
             if (_todayRuns.Count(runs => runs < 1m - _minRunThreshold) != 0)
@@ -168,10 +163,18 @@ namespace QuantConnect.Algorithm.CSharp
                 todayMeanDownwardRun = 1m - _minRunThreshold;
             }
 
-            var todayMeanUpwardRun = (from run in _todayRuns
+            if (_todayRuns.Count(runs => runs > 1m + _minRunThreshold) != 0)
+            {
+                todayMeanUpwardRun = (from run in _todayRuns
                                       where run > 1 + _minRunThreshold
                                       orderby run descending
-                                      select run).Take(_runsPerDay).Average();
+                                      select run)
+                                      .Take(_runsPerDay).Average();
+            }
+            else
+            {
+                todayMeanUpwardRun = 1m + _minRunThreshold;
+            }
 
             // Adds yesterday mean to the previous days runs.
             _previousDaysDownwardRuns.Add(todayMeanDownwardRun);

@@ -269,49 +269,7 @@ namespace QuantConnect.Algorithm.CSharp
             int i = 0;
             string filename;
             string filePath;
-
-            var dailyStatisticsByStock = TradeBuilder.ClosedTrades
-                           .GroupBy(trades => trades.Symbol,
-                                    (symbol, trades) => new
-                                    {
-                                        ticket = symbol,
-                                        dailyValues = trades
-                                        .GroupBy(trade => trade.ExitTime.Date,
-                                                    (day, trade) => new
-                                                    {
-                                                        index = day.Date,
-                                                        profit = trade.Sum(t => t.ProfitLoss),
-                                                        volShares = trade.Sum(t => t.Quantity),
-                                                        volDollars = trade.Sum(t => t.Quantity * (t.ExitPrice + t.EntryPrice))
-                                                    }
-                                                    )
-                                    });
-
-            var asd = TradeBuilder.ClosedTrades
-                           .GroupBy(trades => trades.Symbol,
-                                    (symbol, trades) => new
-                                    {
-                                        ticket = symbol,
-                                        dailyValues = trades.Sum(t => t.Quantity)
-                                    }).ToDictionary(t=> t.ticket.ToString(), t=> t.dailyValues);
-
-            var zxc = TradeBuilder.ClosedTrades
-                                  .GroupBy(trades => trades.ExitTime.Date, 
-                                            (day, trades) =>
-                                                new
-                                                {
-                                                    key = day.Date,
-                                                    value = trades.Sum(t => t.Quantity)
-                                                }
-                                          )
-                                  .ToDictionary(x => x.key, y => y.value);
-
-            var jsonTest = JsonConvert.SerializeObject(asd);
-            var jsonretrieved = JsonConvert.DeserializeObject(jsonTest);
-
-            var resultJsonString = File.ReadAllText(@"C:\Users\JJ\Desktop\Algorithmic Trading\JSONTest.json");
-            var results = JsonConvert.DeserializeObject<BacktestResultPacket>(resultJsonString);
-
+                        
             foreach (string symbol in Symbols)
             {
                 filename = string.Format("LW_price_{0}.csv", symbol);

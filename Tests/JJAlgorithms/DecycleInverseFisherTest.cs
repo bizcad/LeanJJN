@@ -6,6 +6,10 @@ using System;
 
 namespace QuantConnect.Tests.DecycleInverseFisher
 {
+    /// <summary>
+    /// ATENTO!!!
+    /// Cambiar las definiciones en la estrategia!!
+    /// </summary>
     [TestFixture]
     public class DecycleInverseFisherTest
     {

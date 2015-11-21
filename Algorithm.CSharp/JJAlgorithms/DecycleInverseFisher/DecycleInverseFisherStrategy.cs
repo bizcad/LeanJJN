@@ -69,11 +69,11 @@ namespace QuantConnect.Algorithm.CSharp
 
             //bool longSignal = (InvFisherRW[1] < -_threshold) &&
             //                  (InvFisherRW[0] > -_threshold) &&
-            //                  (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _minRunThreshold);
+            //                  (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
 
             //bool shortSignal = (InvFisherRW[1] > _threshold) &&
             //                   (InvFisherRW[0] < _threshold) &&
-            //                   (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _minRunThreshold);
+            //                   (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
             #endregion
 
             bool longSignal = (InvFisherRW[1] < _threshold) &&
