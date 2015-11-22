@@ -9,7 +9,7 @@
     "environment": "backtesting",
 
     // algorithm class selector
-    "algorithm-type-name": "BasicTemplateAlgorithm",
+    "algorithm-type-name": "DecycleInverseFisherAlgorithm",
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
     "algorithm-language": "CSharp",
@@ -22,7 +22,8 @@
     //"algorithm-location": "QuantConnect.Algorithm.Java.dll",
 
     // engine
-    "data-folder": "../../../Data/",
+    //"data-folder": "../../../Data/",
+    "data-folder": "C:\\Users\\JJ\\Dropbox\\JJ\\data\\",
 
     // handlers
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",

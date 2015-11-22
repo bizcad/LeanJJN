@@ -1,16 +1,14 @@
 ﻿using QuantConnect.Data.Market;
 using QuantConnect.Indicators;
 using QuantConnect.Orders;
-using QuantConnect.Packets;
+using Newtonsoft.Json;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-
-using Newtonsoft.Json;
-
 
 namespace QuantConnect.Algorithm.CSharp
 {
@@ -34,7 +32,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         #region Fields
 
-        /* 
+        /*
      * +-------------------------------------------------+
      * |Algorithm Control Panel                          |
      * +-------------------------------------------------+*/
@@ -269,27 +267,49 @@ namespace QuantConnect.Algorithm.CSharp
             int i = 0;
             string filename;
             string filePath;
-                        
+
+            StringBuilder closedTradesLog = new StringBuilder();
+            closedTradesLog.AppendLine("Symbol,Direction,EntryTime,ExitTime");
+
+            var closedTrades = JsonConvert.SerializeObject(TradeBuilder.ClosedTrades);
+            File.WriteAllText("LittleWing_closedTrades.json", closedTrades);
+
+            var transactions = JsonConvert.SerializeObject(Transactions.GetOrders(o => true));
+            File.WriteAllText("LittleWing_transactions.json", transactions);
+
+            // Generate a CSV with the symbol, direction, open and close time for each closed trade. Useful for plotting.
+            foreach (var trade in TradeBuilder.ClosedTrades)
+            {
+                closedTradesLog.AppendLine(string.Format("{0},{1},{2},{3}",
+                                                         trade.Symbol,
+                                                         Enum.GetName(typeof(OrderDirection), trade.Direction),
+                                                         trade.EntryTime.ToString("u"),
+                                                         trade.ExitTime.ToString("u")
+                                                         ));
+            }
+
             foreach (string symbol in Symbols)
             {
                 filename = string.Format("LW_price_{0}.csv", symbol);
                 filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
                 if (File.Exists(filePath)) File.Delete(filePath);
                 File.AppendAllText(filePath, stockLogging[i].ToString());
                 Debug(string.Format("\nSymbol Name: {0}, Ending Value: {1} ", symbol, Portfolio[symbol].Profit));
                 i++;
             }
 
+            filename = string.Format("LittleWing_closedTrades.csv");
+            filePath = AssemblyLocator.ExecutingDirectory() + filename;
+            if (File.Exists(filePath)) File.Delete(filePath);
+            File.AppendAllText(filePath, closedTradesLog.ToString());
+
             filename = string.Format("LittleWing_transactions.csv");
             filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
             if (File.Exists(filePath)) File.Delete(filePath);
             File.AppendAllText(filePath, transactionLogging.ToString());
 
             filename = string.Format("LittleWing_dailyReturns.csv");
             filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
             if (File.Exists(filePath)) File.Delete(filePath);
             File.AppendAllText(filePath, dailyProfitsLogging.ToString());
 
