@@ -12,13 +12,12 @@ namespace QuantConnect.Algorithm.CSharp
         private decimal _threshold;
         private decimal _tolerance;
 
+        private int _signalSelector = 1;
+
         private Indicator _price;
         public Decycle DecycleTrend;
         public InverseFisherTransform InverseFisher;
         public RollingWindow<decimal> InvFisherRW;
-
-        public Decycle LightSmoothPrice;
-        public MomersionIndicator Momersion;
 
         public ParabolicStopAndReverse PSAR;
 
@@ -26,23 +25,21 @@ namespace QuantConnect.Algorithm.CSharp
 
         #region Constructor
 
-        public DIFStrategy(Indicator Price, int DecyclePeriod = 20, int InvFisherPeriod = 40, decimal Threshold = 0.9m, decimal Tolerance = 0.001m)
+        public DIFStrategy(Indicator Price, int DecyclePeriod = 20, int InvFisherPeriod = 40, decimal Threshold = 0.9m, decimal Tolerance = 0.001m, int SignalSelector = 1)
         {
             // Initialize the fields.
             _decyclePeriod = DecyclePeriod;
             _invFisherPeriod = InvFisherPeriod;
             _threshold = Threshold;
             _tolerance = Tolerance;
+            _signalSelector = SignalSelector;
 
             // Initialize the indicators used by the Strategy.
             _price = Price;
             DecycleTrend = new Decycle(_decyclePeriod).Of(Price);
             InverseFisher = new InverseFisherTransform(_invFisherPeriod).Of(DecycleTrend);
             InvFisherRW = new RollingWindow<decimal>(2);
-            
-            LightSmoothPrice = new Decycle(10).Of(Price);
-            Momersion = new MomersionIndicator(10, 60).Of(Price);
-
+        
             // Fill the Inverse Fisher rolling windows at every new InverseFisher observation.
             // Once the Inverse Fisher rolling windows is ready, at every InverseFisher update, the Check signal method will be called.
             InverseFisher.Updated += (object sender, IndicatorDataPoint updated) =>
@@ -63,29 +60,30 @@ namespace QuantConnect.Algorithm.CSharp
         public override void CheckSignal()
         {
             OrderSignal actualSignal = OrderSignal.doNothing;
-            
-            #region Alternative Signals
-            // This signal are faster but inaccurate. The tests works with this signals.
+            bool longSignal = false;
+            bool shortSignal = false;
 
-            //bool longSignal = (InvFisherRW[1] < -_threshold) &&
-            //                  (InvFisherRW[0] > -_threshold) &&
-            //                  (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
+            if (_signalSelector == 0)
+            {
+                // This signals are faster but inaccurate. The tests works with this signals.
+                longSignal = (InvFisherRW[1] < -_threshold) &&
+                                  (InvFisherRW[0] > -_threshold) &&
+                                  (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
 
-            //bool shortSignal = (InvFisherRW[1] > _threshold) &&
-            //                   (InvFisherRW[0] < _threshold) &&
-            //                   (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
-            #endregion
+                shortSignal = (InvFisherRW[1] > _threshold) &&
+                                   (InvFisherRW[0] < _threshold) &&
+                                   (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
+            }
+            else if (_signalSelector == 1)
+            {
+                longSignal = (InvFisherRW[1] < _threshold) &&
+                                  (InvFisherRW[0] > _threshold) &&
+                                  (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
 
-            bool longSignal = (InvFisherRW[1] < _threshold) &&
-                              (InvFisherRW[0] > _threshold) &&
-                              (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance) &&
-                              (Momersion > 50);
-
-            bool shortSignal = (InvFisherRW[1] > -_threshold) &&
-                               (InvFisherRW[0] < -_threshold) &&
-                               (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance) &&
-                               (Momersion > 50);
-            
+                shortSignal = (InvFisherRW[1] > -_threshold) &&
+                                   (InvFisherRW[0] < -_threshold) &&
+                                   (Math.Abs(InvFisherRW[0] - InvFisherRW[1]) > _tolerance);
+            }
 
             switch (Position)
             {
@@ -117,8 +115,6 @@ namespace QuantConnect.Algorithm.CSharp
             DecycleTrend.Reset();
             InverseFisher.Reset();
             InvFisherRW.Reset();
-            LightSmoothPrice.Reset();
-            Momersion.Reset();
         }
 
         #endregion Methods

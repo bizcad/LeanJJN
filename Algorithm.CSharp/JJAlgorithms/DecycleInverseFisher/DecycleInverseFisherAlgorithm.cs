@@ -198,13 +198,11 @@ namespace QuantConnect.Algorithm.CSharp
                 #region Logging stuff - Filling the data StockLogging
 
                 //Time,Close,Decycle,InvFisher,LightSmoothPrice,Momersion,PSAR,Position
-                string newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7}",
+                string newLine = string.Format("{0},{1},{2},{3},{4},{5}",
                                                Time.ToString("u"),
                                                data[symbol].Close,
                                                Strategy[symbol].DecycleTrend.Current.Value,
                                                Strategy[symbol].InverseFisher.Current.Value,
-                                               Strategy[symbol].LightSmoothPrice.Current.Value,
-                                               Strategy[symbol].Momersion.Current.Value,
                                                PSARDict[symbol].Current.Value,
                                                Portfolio[symbol].Invested ? Portfolio[symbol].IsLong ? 1 : -1 : 0
                                                );
@@ -268,8 +266,6 @@ namespace QuantConnect.Algorithm.CSharp
             string filename;
             string filePath;
 
-            StringBuilder closedTradesLog = new StringBuilder();
-            closedTradesLog.AppendLine("Symbol,Direction,EntryTime,ExitTime");
 
             var closedTrades = JsonConvert.SerializeObject(TradeBuilder.ClosedTrades);
             File.WriteAllText("LittleWing_closedTrades.json", closedTrades);
@@ -278,6 +274,8 @@ namespace QuantConnect.Algorithm.CSharp
             File.WriteAllText("LittleWing_transactions.json", transactions);
 
             // Generate a CSV with the symbol, direction, open and close time for each closed trade. Useful for plotting.
+            StringBuilder closedTradesLog = new StringBuilder();
+            closedTradesLog.AppendLine("Symbol,Direction,EntryTime,ExitTime");
             foreach (var trade in TradeBuilder.ClosedTrades)
             {
                 closedTradesLog.AppendLine(string.Format("{0},{1},{2},{3}",
@@ -330,7 +328,8 @@ namespace QuantConnect.Algorithm.CSharp
         {
             OrderSignal actualOrder = OrderSignal.doNothing;
 
-            if (Strategy[symbol].Momersion > 50)
+            // if (Strategy[symbol].Momersion > 50)
+            if (false) 
             {
                 if ((PSARDict[symbol] > Securities[symbol].Price) &&
                    (Strategy[symbol].InverseFisher < -Threshold))
@@ -499,7 +498,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             foreach (string symbol in Symbols)
             {
-                Strategy[symbol].Momersion.Reset();
+                //Strategy[symbol].Momersion.Reset();
                 PSARDict[symbol].Reset();
                 if (resetAtEndOfDay) Strategy[symbol].Reset();
 

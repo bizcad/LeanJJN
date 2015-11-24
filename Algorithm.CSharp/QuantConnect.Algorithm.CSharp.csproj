@@ -68,6 +68,8 @@
     <Compile Include="JJAlgorithms\Laguerre.cs" />
     <Compile Include="JJAlgorithms\LaguerreBasic.cs" />
     <Compile Include="JJAlgorithms\LaguerreEMA.cs" />
+    <Compile Include="JJAlgorithms\LittleWingPlusMSA\LittleWingPlusMSA.cs" />
+    <Compile Include="JJAlgorithms\LittleWingPlusMSA\TradeBarRecord.cs" />
     <Compile Include="JJAlgorithms\MMRStrategy\CrossEMAStrategy.cs" />
     <Compile Include="JJAlgorithms\MMRStrategy\MomersionAlgorithm.cs" />
     <Compile Include="JJAlgorithms\MMRStrategy\RSIStrategy.cs" />
