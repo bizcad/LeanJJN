@@ -9,6 +9,7 @@
     "environment": "backtesting",
 
     // algorithm class selector
+    //"algorithm-type-name": "BasicTemplateAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
     "algorithm-type-name": "LittleWingPlusMSA",
 

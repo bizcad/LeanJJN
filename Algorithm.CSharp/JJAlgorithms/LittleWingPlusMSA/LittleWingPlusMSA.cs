@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 
 using QuantConnect;
+using QuantConnect.Orders;
 using QuantConnect.Indicators;
 
 using Newtonsoft.Json;
@@ -23,7 +24,7 @@ namespace QuantConnect.Algorithm.CSharp
         #region Algorithm Control Panel
         /*===========| Algorithm Global Variables |===========*/
         private DateTime _startDate = new DateTime(2015, 07, 01);
-        private DateTime _endDate = new DateTime(2015, 07, 05);
+        private DateTime _endDate = new DateTime(2015, 09, 30);
         private decimal _portfolioInitialCash = 26000 * 4;
         /// <summary>
         /// The symbols to be used by the strategy.
@@ -184,10 +185,16 @@ namespace QuantConnect.Algorithm.CSharp
                 foreach (var symbol in Symbols)
                 {
                     OrderSignal actualOrder = OrderSignal.doNothing;
-
+                    // Check if there is new data for the symbol.
                     if (!data.ContainsKey(symbol)) continue;
 
-                    if (Portfolio[symbol].Invested)
+                    // Update the flag only if there is some new signal.
+                    if (Flaggers[symbol].ActualSignal != OrderSignal.doNothing)
+                    {
+                        OrderFlags[symbol] = Flaggers[symbol].ActualSignal;
+                    }
+
+                    if (!Portfolio[symbol].Invested)
                     {
                         actualOrder = ScanForEntry(symbol);
                     }
@@ -203,13 +210,48 @@ namespace QuantConnect.Algorithm.CSharp
                                                           Triggers[symbol].DecycleTrend,
                                                           Triggers[symbol].InverseFisher,
                                                           Flaggers[symbol].SmoothedSeries,
-                                                          Enum.GetName(typeof(OrderSignal), Flaggers[symbol].ActualSignal),
+                                                          Enum.GetName(typeof(OrderSignal), OrderFlags[symbol]),
                                                           Enum.GetName(typeof(OrderSignal), actualOrder)));
                 }
             }
         }
 
+        public override void OnOrderEvent(OrderEvent orderEvent)
+        {
+            string symbol = orderEvent.Symbol;
+            int position = Portfolio[symbol].Quantity;
+            var actualOrder = Transactions.GetOrderById(orderEvent.OrderId);
 
+            switch (orderEvent.Status)
+            {
+                case OrderStatus.New:
+                    Log("New order sent: " + actualOrder.ToString());
+                    break;
+
+                case OrderStatus.Submitted:
+                    Log("Order Submitted: " + actualOrder.ToString());
+                    break;
+
+                case OrderStatus.PartiallyFilled:
+                case OrderStatus.Filled:
+                    Log("Order Filled: " + actualOrder.ToString());
+                    break;
+
+                case OrderStatus.Canceled:
+                    Log("Order Canceled: " + actualOrder.ToString());
+                    break;
+
+                case OrderStatus.None:
+                case OrderStatus.Invalid:
+                default:
+                    Log("WTF!!!!!");
+                    break;
+            }
+
+            if (position > 0) Triggers[symbol].Position = StockState.longPosition;
+            else if (position < 0) Triggers[symbol].Position = StockState.shortPosition;
+            else Triggers[symbol].Position = StockState.noInvested;
+        }
 
         public override void OnEndOfAlgorithm()
         {
@@ -226,24 +268,124 @@ namespace QuantConnect.Algorithm.CSharp
 
         # region Algorithm methods
 
+        /// <summary>
+        /// Scans for entry opportunities.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <returns>The actual order signal</returns>
+        private OrderSignal ScanForEntry(string symbol)
+        {
+            // First approach, just check if the Trigger has the same signal as the Flag. 
+            return (Triggers[symbol].ActualSignal == OrderFlags[symbol]) ? Triggers[symbol].ActualSignal : OrderSignal.doNothing;
+        }
+
         private OrderSignal ScanForExit(string symbol)
         {
             return Triggers[symbol].ActualSignal;
         }
 
-        private OrderSignal ScanForEntry(string symbol)
+        /// <summary>
+        /// Estimate the shares to operate in the next transaction given the stock weight and the kind of order.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <param name="actualOrder">The actual order.</param>
+        /// <returns></returns>
+        private int? PositionShares(string symbol, OrderSignal actualOrder)
         {
-            return Flaggers[symbol].ActualSignal;
+            int? positionQuantity = null;
+            int quantity = 0;
+            decimal price = Securities[symbol].Price;
+
+            // Handle negative portfolio weights.
+            if (ShareSize[symbol] < 0)
+            {
+                if (actualOrder == OrderSignal.goLong) actualOrder = OrderSignal.goShort;
+                else if (actualOrder == OrderSignal.goShort) actualOrder = OrderSignal.goLong;
+            }
+
+            switch (actualOrder)
+            {
+                case OrderSignal.goShort:
+                case OrderSignal.goLong:
+                    // In the first part the estimations are in ABSOLUTE VALUE!
+
+                    // Estimated the desired quantity to achieve target-percent holdings.
+                    quantity = Math.Abs(CalculateOrderQuantity(symbol, ShareSize[symbol]));
+                    // Estimate the max allowed position in dollars and compare it with the desired one.
+                    decimal maxOperationDollars = Portfolio.TotalPortfolioValue * maxPortfolioRiskPerPosition;
+                    decimal operationDollars = quantity * price;
+                    // If the desired is bigger than the max allowed operation, then estimate a new bounded quantity.
+                    if (maxOperationDollars < operationDollars) quantity = (int)(maxOperationDollars / price);
+
+                    if (actualOrder == OrderSignal.goLong)
+                    {
+                        // Check the margin availability.
+                        quantity = (int)Math.Min(quantity, Portfolio.MarginRemaining / price);
+                    }
+                    else
+                    {
+                        // In case of short sales, the margin should be a 150% of the operation.
+                        quantity = (int)Math.Min(quantity, Portfolio.MarginRemaining / (1.5m * price));
+                        // Now adjust the sing correctly.
+                        quantity *= -1;
+                    }
+                    break;
+
+                case OrderSignal.closeShort:
+                case OrderSignal.closeLong:
+                    quantity = -Portfolio[symbol].Quantity;
+                    break;
+
+                default:
+                    break;
+            }
+
+            // Only assign a value to the positionQuantity if is bigger than a threshold. If not, then it'll return null.
+            if (Math.Abs(quantity) > minSharesPerTransaction)
+            {
+                positionQuantity = quantity;
+            }
+
+            return positionQuantity;
         }
 
+        /// <summary>
+        /// Executes the strategy.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <param name="actualOrder">The actual order.</param>
         private void ExecuteOrder(string symbol, OrderSignal actualOrder)
         {
-            return;
+            int? shares = PositionShares(symbol, actualOrder);
+
+            switch (actualOrder)
+            {
+                case OrderSignal.goLong:
+                case OrderSignal.goShort:
+                    // If the returned shares is null then is the same than doNothing.
+                    if (shares.HasValue)
+                    {
+                        Log("===> Market entry order sent " + symbol);
+                        MarketOrder(symbol, shares.Value);
+                    }
+                    break;
+
+                case OrderSignal.closeLong:
+                case OrderSignal.closeShort:
+                    Log("<=== Closing Position " + symbol);
+                    MarketOrder(symbol, shares.Value);
+                    break;
+
+                default: break;
+            }
         }
 
         private void CloseDay()
         {
-            return;
+            foreach (var symbol in Symbols)
+            {
+                OrderFlags[symbol] = OrderSignal.doNothing;
+            }
         }
         #endregion
     }

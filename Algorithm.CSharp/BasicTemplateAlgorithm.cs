@@ -13,7 +13,12 @@
  * limitations under the License.
 */
 
+using Newtonsoft.Json;
 using QuantConnect.Data;
+using QuantConnect.Orders;
+using QuantConnect.Packets;
+using System.Collections.Generic;
+using System.IO;
 
 namespace QuantConnect.Algorithm.CSharp
 {
@@ -45,6 +50,16 @@ namespace QuantConnect.Algorithm.CSharp
                 SetHoldings("SPY", 1);
                 Debug("Purchased Stock");
             }
+        }
+
+        public override void OnEndOfAlgorithm()
+        {
+            var resultJsonString = File.ReadAllText(@"C:\Users\JJ\Desktop\Algorithmic Trading\JSONTest.json");
+            dynamic deserializedResults = JsonConvert.DeserializeObject(resultJsonString);
+            var charts = JsonConvert.DeserializeObject<Dictionary<string, Chart>>(deserializedResults["oResultData"]["results"]["Charts"].ToString());
+
+            var orders = JsonConvert.DeserializeObject<Dictionary<int, Order>>(deserializedResults["oResultData"]["results"]["Orders"].ToString());
+            
         }
     }
 }
