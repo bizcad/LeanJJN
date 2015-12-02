@@ -25,13 +25,48 @@ namespace QuantConnect
     /// the SID is constant over the life of a security
     /// </summary>
     [JsonConverter(typeof(SymbolJsonConverter))]
-    public class Symbol : IEquatable<Symbol>, IComparable
+    public sealed class Symbol : IEquatable<Symbol>, IComparable
     {
         /// <summary>
         /// Represents an unassigned symbol. This is intended to be used as an
         /// uninitialized, default value
         /// </summary>
-        public static readonly Symbol Empty = new Symbol(string.Empty, string.Empty);
+        public static readonly Symbol Empty = new Symbol(SecurityIdentifier.Empty, string.Empty);
+
+        /// <summary>
+        /// Provides a convience method for creating a Symbol for most security types.
+        /// This method currently does not support Option, Commodity, and Future
+        /// </summary>
+        /// <param name="ticker">The string ticker symbol</param>
+        /// <param name="securityType">The security type of the ticker</param>
+        /// <param name="market">The market the ticker resides in</param>
+        /// <returns>A new Symbol object for the specified ticker</returns>
+        public static Symbol Create(string ticker, SecurityType securityType, string market)
+        {
+            SecurityIdentifier sid;
+            switch (securityType)
+            {
+                case SecurityType.Base:
+                    sid = SecurityIdentifier.GenerateBase(ticker, market);
+                    break;
+                case SecurityType.Equity:
+                    sid = SecurityIdentifier.GenerateEquity(ticker, market);
+                    break;
+                case SecurityType.Forex:
+                    sid = SecurityIdentifier.GenerateForex(ticker, market);
+                    break;
+                case SecurityType.Cfd:
+                    sid = SecurityIdentifier.GenerateCfd(ticker, market);
+                    break;
+                case SecurityType.Option:
+                case SecurityType.Commodity:
+                case SecurityType.Future:
+                default:
+                    throw new NotImplementedException("The security type has not been implemented yet: " + securityType);
+            }
+
+            return new Symbol(sid, ticker);
+        }
 
         #region Properties
 
@@ -41,41 +76,27 @@ namespace QuantConnect
         public string Value { get; private set; }
 
         /// <summary>
-        /// Gets permtick used to identify securities in map files
+        /// Gets the security identifier for this symbol
         /// </summary>
-        public string Permtick { get; private set; }
+        public SecurityIdentifier ID { get; private set; }
 
         #endregion
 
         #region Constructors
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Symbol"/> class using the specified
-        /// string as both the symbol's value and sid
-        /// </summary>
-        /// <param name="symbol"></param>
-        public Symbol(string symbol)
-            : this(symbol, symbol)
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="Symbol"/> class
         /// </summary>
-        /// <param name="permtick">The security's unique identifier</param>
-        /// <param name="value">The security's current ticker symbol</param>
-        public Symbol(string permtick, string value)
+        /// <param name="sid">The security identifier for this symbol</param>
+        /// <param name="value">The current ticker symbol value</param>
+        public Symbol(SecurityIdentifier sid, string value)
         {
             if (value == null)
             {
                 throw new ArgumentNullException("value");
             }
-            if (permtick == null)
-            {
-                throw new ArgumentNullException("permtick");
-            }
+            ID = sid;
             Value = value.ToUpper();
-            Permtick = permtick.ToUpper();
         }
 
         #endregion
@@ -91,11 +112,26 @@ namespace QuantConnect
         /// <param name="obj">The object to compare with the current object. </param><filterpriority>2</filterpriority>
         public override bool Equals(object obj)
         {
-            // compare strings just as you would a symbol object
-            var sid = obj as string;
-            if (sid != null) return Permtick.Equals(sid);
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
+
+            // compare strings just as you would a symbol object
+            var sidString = obj as string;
+            if (sidString != null)
+            {
+                SecurityIdentifier sid;
+                if (SecurityIdentifier.TryParse(sidString, out sid))
+                {
+                    return ID.Equals(sid);
+                }
+            }
+            
+            // compare a sid just as you would a symbol object
+            if (obj is SecurityIdentifier)
+            {
+                return ID.Equals((SecurityIdentifier) obj);
+            }
+
             if (obj.GetType() != GetType()) return false;
             return Equals((Symbol)obj);
         }
@@ -109,11 +145,8 @@ namespace QuantConnect
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
         {
-            unchecked
-            {
-                // only SID is used for comparisons
-                return Permtick.GetHashCode();
-            }
+            // only SID is used for comparisons
+            unchecked { return ID.GetHashCode(); }
         }
 
         /// <summary>
@@ -128,12 +161,12 @@ namespace QuantConnect
             var str = obj as string;
             if (str != null)
             {
-                return string.Compare(Permtick, str, StringComparison.OrdinalIgnoreCase);
+                return string.Compare(Value, str, StringComparison.OrdinalIgnoreCase);
             }
             var sym = obj as Symbol;
             if (sym != null)
             {
-                return string.Compare(Permtick, sym.Permtick, StringComparison.OrdinalIgnoreCase);
+                return string.Compare(Value, sym.Value, StringComparison.OrdinalIgnoreCase);
             }
 
             throw new ArgumentException("Object must be of type Symbol or string.");
@@ -148,7 +181,7 @@ namespace QuantConnect
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return Permtick;
+            return SymbolCache.GetTicker(this);
         }
 
         #endregion
@@ -167,7 +200,7 @@ namespace QuantConnect
             if (ReferenceEquals(null, other)) return false;
             if (ReferenceEquals(this, other)) return true;
             // only SID is used for comparisons
-            return string.Equals(Permtick, other.Permtick);
+            return ID.Equals(other.ID);
         }
 
         /// <summary>
@@ -178,7 +211,8 @@ namespace QuantConnect
         /// <returns>True if both symbols are equal, otherwise false</returns>
         public static bool operator ==(Symbol left, Symbol right)
         {
-            return Equals(left, right);
+            if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);
+            return left.Equals(right);
         }
 
         /// <summary>
@@ -189,7 +223,8 @@ namespace QuantConnect
         /// <returns>True if both symbols are not equal, otherwise false</returns>
         public static bool operator !=(Symbol left, Symbol right)
         {
-            return !Equals(left, right);
+            if (ReferenceEquals(left, null)) return ReferenceEquals(right, null);
+            return !left.Equals(right);
         }
 
         #endregion
@@ -197,23 +232,37 @@ namespace QuantConnect
         #region Implicit operators
 
         /// <summary>
-        /// Returns the symbol's SID
+        /// Returns the symbol's string ticker
         /// </summary>
         /// <param name="symbol">The symbol</param>
-        /// <returns>The SID</returns>
+        /// <returns>The string ticker</returns>
+        [Obsolete("Symbol implicit operator to string is provided for algorithm use only.")]
         public static implicit operator string(Symbol symbol)
         {
-            return symbol.Permtick;
+            return symbol.ToString();
         }
 
         /// <summary>
         /// Creates symbol using string as sid
         /// </summary>
-        /// <param name="symbol">The string</param>
+        /// <param name="ticker">The string</param>
         /// <returns>The symbol</returns>
-        public static implicit operator Symbol(string symbol)
+        [Obsolete("Symbol implicit operator from string is provided for algorithm use only.")]
+        public static implicit operator Symbol(string ticker)
         {
-            return new Symbol(symbol);
+            Symbol symbol;
+            if (SymbolCache.TryGetSymbol(ticker, out symbol))
+            {
+                return symbol;
+            }
+
+            SecurityIdentifier sid;
+            if (SecurityIdentifier.TryParse(ticker, out sid))
+            {
+                return new Symbol(sid, sid.Symbol);
+            }
+            
+            return Empty;
         }
 
         #endregion
@@ -221,13 +270,18 @@ namespace QuantConnect
         #region String methods
 
         // in order to maintain better compile time backwards compatibility,
-        // we'll redirect a few common string methods to Permtick
+        // we'll redirect a few common string methods to Value, but mark obsolete
 #pragma warning disable 1591
-        public bool Contains(string value) { return Permtick.Contains(value); }
-        public bool EndsWith(string value) { return Permtick.EndsWith(value); }
-        public bool StartsWith(string value) { return Permtick.StartsWith(value); }
-        public string ToLower() { return Permtick.ToLower(); }
-        public string ToUpper() { return Permtick.ToUpper(); }
+        [Obsolete("Symbol.Contains is a pass-through for Symbol.Value.Contains")]
+        public bool Contains(string value) { return Value.Contains(value); }
+        [Obsolete("Symbol.EndsWith is a pass-through for Symbol.Value.EndsWith")]
+        public bool EndsWith(string value) { return Value.EndsWith(value); }
+        [Obsolete("Symbol.StartsWith is a pass-through for Symbol.Value.StartsWith")]
+        public bool StartsWith(string value) { return Value.StartsWith(value); }
+        [Obsolete("Symbol.ToLower is a pass-through for Symbol.Value.ToLower")]
+        public string ToLower() { return Value.ToLower(); }
+        [Obsolete("Symbol.ToUpper is a pass-through for Symbol.Value.ToUpper")]
+        public string ToUpper() { return Value.ToUpper(); }
 #pragma warning restore 1591
 
         #endregion

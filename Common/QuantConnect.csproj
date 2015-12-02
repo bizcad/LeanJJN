@@ -128,6 +128,7 @@
     <Compile Include="Brokerages\InteractiveBrokersBrokerageModel.cs" />
     <Compile Include="Brokerages\OandaBrokerageModel.cs" />
     <Compile Include="Brokerages\TradierBrokerageModel.cs" />
+    <Compile Include="Commands\AlgorithmStatusCommand.cs" />
     <Compile Include="Commands\ICommand.cs" />
     <Compile Include="Commands\LiquidateCommand.cs" />
     <Compile Include="Commands\OrderCommand.cs" />
@@ -136,6 +137,7 @@
     <Compile Include="Data\Auxiliary\FactorFile.cs" />
     <Compile Include="Data\Auxiliary\FactorFileRow.cs" />
     <Compile Include="Data\Auxiliary\MapFile.cs" />
+    <Compile Include="Data\Auxiliary\LocalDiskMapFileProvider.cs" />
     <Compile Include="Data\Auxiliary\MapFileResolver.cs" />
     <Compile Include="Data\Auxiliary\MapFileRow.cs" />
     <Compile Include="Data\Consolidators\BaseDataConsolidator.cs" />
@@ -179,6 +181,7 @@
     <Compile Include="Interfaces\IDataQueueHandler.cs" />
     <Compile Include="Interfaces\IHistoryProvider.cs" />
     <Compile Include="Interfaces\IJobQueueHandler.cs" />
+    <Compile Include="Interfaces\IMapFileProvider.cs" />
     <Compile Include="Interfaces\IMessagingHandler.cs" />
     <Compile Include="LocalTimeKeeper.cs" />
     <Compile Include="Market.cs" />
@@ -188,6 +191,7 @@
     <Compile Include="Orders\MarketOnCloseOrder.cs" />
     <Compile Include="Orders\MarketOnOpenOrder.cs" />
     <Compile Include="Orders\OrderField.cs" />
+    <Compile Include="Orders\OrderJsonConverter.cs" />
     <Compile Include="Orders\OrderRequest.cs" />
     <Compile Include="Orders\OrderRequestStatus.cs" />
     <Compile Include="Orders\OrderRequestType.cs" />
@@ -204,6 +208,7 @@
     <Compile Include="Orders\SubmitOrderRequest.cs" />
     <Compile Include="Orders\UpdateOrderFields.cs" />
     <Compile Include="Orders\UpdateOrderRequest.cs" />
+    <Compile Include="Packets\CommandResultPacket.cs" />
     <Compile Include="Packets\HandledErrorPacket.cs" />
     <Compile Include="Packets\HistoryPacket.cs" />
     <Compile Include="Properties\SharedAssemblyInfo.cs" />
@@ -227,7 +232,7 @@
     <Compile Include="Securities\ISettlementModel.cs" />
     <Compile Include="Securities\LocalMarketHours.cs" />
     <Compile Include="Securities\SecurityExchangeHours.cs" />
-    <Compile Include="Securities\SecurityExchangeHoursProvider.cs" />
+    <Compile Include="Securities\MarketHoursDatabase.cs" />
     <Compile Include="Securities\Forex\ForexMarginModel.cs" />
     <Compile Include="Securities\Forex\ForexPortfolioModel.cs" />
     <Compile Include="Securities\IHoldingsProvider.cs" />
@@ -240,6 +245,7 @@
     <Compile Include="Securities\SecurityMarginModel.cs" />
     <Compile Include="Securities\ImmediateSettlementModel.cs" />
     <Compile Include="Securities\UnsettledCashAmount.cs" />
+    <Compile Include="SecurityIdentifier.cs" />
     <Compile Include="SeriesSampler.cs" />
     <Compile Include="Data\Custom\Quandl.cs" />
     <Compile Include="Data\DynamicData.cs" />
@@ -276,7 +282,6 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="Orders\Order.cs" />
     <Compile Include="Securities\AccountEvent.cs" />
-    <Compile Include="Securities\SecurityEvent.cs" />
     <Compile Include="Securities\Equity\EquityCache.cs" />
     <Compile Include="Securities\Equity\EquityDataFilter.cs" />
     <Compile Include="Securities\Forex\ForexCache.cs" />
@@ -312,7 +317,9 @@
     <Compile Include="Statistics\Trade.cs" />
     <Compile Include="Statistics\TradeBuilder.cs" />
     <Compile Include="Statistics\TradeEnums.cs" />
+    <Compile Include="SymbolCache.cs" />
     <Compile Include="SymbolJsonConverter.cs" />
+    <Compile Include="SymbolValueJsonConverter.cs" />
     <Compile Include="Time.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TimeKeeper.cs" />
@@ -325,6 +332,8 @@
     <Compile Include="Util\FixedSizeQueue.cs" />
     <Compile Include="Util\FixedSizeHashQueue.cs" />
     <Compile Include="Util\FuncTextWriter.cs" />
+    <Compile Include="Util\SecurityIdentifierJsonConverter.cs" />
+    <Compile Include="Util\TypeChangeJsonConverter.cs" />
     <Compile Include="Util\LinqExtensions.cs" />
     <Compile Include="Util\MemoizingEnumerable.cs" />
     <Compile Include="Util\NullStringValueConverter.cs" />

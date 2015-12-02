@@ -36,7 +36,7 @@ using IB = Krs.Ats.IBNet;
 
 namespace QuantConnect.Brokerages.InteractiveBrokers
 {
-    using SymbolCacheKey = Tuple<SecurityType, string>;
+    using SymbolCacheKey = Tuple<SecurityType, Symbol>;
 
     /// <summary>
     /// The Interactive Brokers brokerage
@@ -65,8 +65,10 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
 
         // IB likes to duplicate/triplicate some events, keep track of them and swallow the dupes
         // we're keeping track of the .ToString() of the order event here
-        private readonly FixedSizeHashQueue<string> _recentOrderEvents = new FixedSizeHashQueue<string>(50); 
+        private readonly FixedSizeHashQueue<string> _recentOrderEvents = new FixedSizeHashQueue<string>(50);
 
+        private readonly object _orderFillsLock = new object();
+        private readonly ConcurrentDictionary<Symbol, int> _orderFills = new ConcurrentDictionary<Symbol, int>(); 
         private readonly ConcurrentDictionary<string, decimal> _cashBalances = new ConcurrentDictionary<string, decimal>(); 
         private readonly ConcurrentDictionary<string, string> _accountProperties = new ConcurrentDictionary<string, string>();
         // number of shares per symbol
@@ -140,7 +142,6 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             _client = new IB.IBClient();
 
             // set up event handlers
-            _client.UpdatePortfolio += HandlePortfolioUpdates;
             _client.OrderStatus += HandleOrderStatusUpdates;
             _client.UpdateAccountValue += HandleUpdateAccountValue;
             _client.Error += HandleError;
@@ -178,14 +179,14 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         {
             try
             {
-                Log.Trace("InteractiveBrokersBrokerage.PlaceOrder(): Symbol: " + order.Symbol + " Quantity: " + order.Quantity);
+                Log.Trace("InteractiveBrokersBrokerage.PlaceOrder(): Symbol: " + order.Symbol.Value + " Quantity: " + order.Quantity);
 
                 IBPlaceOrder(order, true);
                 return true;
             }
             catch (Exception err)
             {
-                Log.Error("InteractiveBrokersBrokerage.PlaceOrder(): " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.PlaceOrder(): " + err);
                 return false;
             }
         }
@@ -199,13 +200,13 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         {
             try
             {
-                Log.Trace("InteractiveBrokersBrokerage.UpdateOrder(): Symbol: " + order.Symbol + " Quantity: " + order.Quantity + " Status: " + order.Status);
+                Log.Trace("InteractiveBrokersBrokerage.UpdateOrder(): Symbol: " + order.Symbol.Value + " Quantity: " + order.Quantity + " Status: " + order.Status);
 
                 IBPlaceOrder(order, false);
             }
             catch (Exception err)
             {
-                Log.Error("InteractiveBrokersBrokerage.UpdateOrder(): " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.UpdateOrder(): " + err);
                 return false;
             }
             return true;
@@ -220,7 +221,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         {
             try
             {
-                Log.Trace("InteractiveBrokersBrokerage.CancelOrder(): Symbol: " + order.Symbol + " Quantity: " + order.Quantity);
+                Log.Trace("InteractiveBrokersBrokerage.CancelOrder(): Symbol: " + order.Symbol.Value + " Quantity: " + order.Quantity);
 
                 // this could be better
                 foreach (var id in order.BrokerId)
@@ -232,7 +233,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             }
             catch (Exception err)
             {
-                Log.Error("InteractiveBrokersBrokerage.CancelOrder(): OrderID: " + order.Id + " - " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.CancelOrder(): OrderID: " + order.Id + " - " + err);
                 return false;
             }
             return true;
@@ -297,7 +298,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                     return null;
                 }
                 // if quote currency is in USD don't bother making the request
-                string currency = local.Symbol.Substring(3);
+                string currency = local.Symbol.Value.Substring(3);
                 if (currency == "USD")
                 {
                     local.ConversionRate = 1m;
@@ -411,7 +412,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                     }
 
                     // we couldn't connect after several attempts, log the error and throw an exception
-                    Log.Error("InteractiveBrokersBrokerage.Connect(): " + err.Message);
+                    Log.Error(err);
 
                     // add a blurb about TWS for connection refused errors
                     if (err.Message.Contains("Connection refused"))
@@ -803,7 +804,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             }
             catch (Exception err)
             {
-                Log.Error("InteractiveBrokersBrokerage.HandleUpdateAccountValue(): " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.HandleUpdateAccountValue(): " + err);
             }
         }
 
@@ -843,8 +844,24 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
                     return;
                 }
 
+                int filledThisTime;
+                lock (_orderFillsLock)
+                {
+                    // lock since we're getting and updating in multiple operations
+                    var currentFilled = _orderFills.GetOrAdd(order.Symbol, 0);
+                    filledThisTime = update.Filled - currentFilled;
+                    _orderFills.AddOrUpdate(order.Symbol, currentFilled, (sym, filled) => update.Filled);
+                }
+
+                // don't send empty fill events
+                if (filledThisTime == 0 && (status == OrderStatus.PartiallyFilled || status == OrderStatus.Filled))
+                {
+                    Log.Trace("InteractiveBrokersBrokerage.HandleOrderStatusUpdates(): Ignored zero fill event: OrderId: " + update.OrderId + " Remaining: " + update.Remaining);
+                    return;
+                }
+
                 // mark sells as negative quantities
-                var fillQuantity = order.Direction == OrderDirection.Buy ? update.Filled : -update.Filled;
+                var fillQuantity = order.Direction == OrderDirection.Buy ? filledThisTime : -filledThisTime;
                 const int orderFee = 0;
                 var orderEvent = new OrderEvent(order, DateTime.UtcNow, orderFee, "Interactive Brokers Fill Event")
                 {
@@ -866,23 +883,12 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             }
             catch(InvalidOperationException err)
             {
-                Log.Error("InteractiveBrokersBrokerage.HandleOrderStatusUpdates(): Unable to resolve executions for BrokerageID: " + update.OrderId + " - " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.HandleOrderStatusUpdates(): Unable to resolve executions for BrokerageID: " + update.OrderId + " - " + err);
             }
             catch (Exception err)
             {
-                Log.Error("InteractiveBrokersBrokerage.HandleOrderStatusUpdates(): " + err.Message);
+                Log.Error("InteractiveBrokersBrokerage.HandleOrderStatusUpdates(): " + err);
             }
-        }
-
-        /// <summary>
-        /// Handle portfolio changed events from IB
-        /// </summary>
-        private void HandlePortfolioUpdates(object sender, IB.UpdatePortfolioEventArgs e)
-        {
-            _accountHoldingsResetEvent.Reset();
-            var holding = CreateHolding(e);
-            _accountHoldings[holding.Symbol] = holding;
-            OnPortfolioChanged(new SecurityEvent(holding.Symbol, e.Position, e.AverageCost));
         }
 
         /// <summary>
@@ -1130,7 +1136,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// <summary>
         /// Maps SecurityType enum
         /// </summary>
-        private IB.SecurityType ConvertSecurityType(SecurityType type)
+        private static IB.SecurityType ConvertSecurityType(SecurityType type)
         {
             switch (type)
             {
@@ -1160,7 +1166,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// <summary>
         /// Maps SecurityType enum
         /// </summary>
-        private SecurityType ConvertSecurityType(IB.SecurityType type)
+        private static SecurityType ConvertSecurityType(IB.SecurityType type)
         {
             switch (type)
             {
@@ -1207,7 +1213,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
 
             return new Holding
             {
-                Symbol = MapSymbol(e.Contract).Value,
+                Symbol = MapSymbol(e.Contract),
                 Type = ConvertSecurityType(e.Contract.SecurityType),
                 Quantity = e.Position,
                 AveragePrice = e.AverageCost,
@@ -1222,12 +1228,19 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// </summary>
         private static Symbol MapSymbol(IB.Contract contract)
         {
-            if (contract.SecurityType == IB.SecurityType.Cash)
+            var securityType = ConvertSecurityType(contract.SecurityType);
+            if (securityType == SecurityType.Forex)
             {
                 // reformat for QC
-                return new Symbol(contract.Symbol + contract.Currency);
+                var symbol = contract.Symbol + contract.Currency;
+                return new Symbol(SecurityIdentifier.GenerateForex(symbol, Market.FXCM), symbol);
             }
-            return new Symbol(contract.Symbol);
+            if (securityType == SecurityType.Equity)
+            {
+                return new Symbol(SecurityIdentifier.GenerateEquity(contract.Symbol, Market.USA), contract.Symbol);
+            }
+
+            throw new NotImplementedException("The specified security type has not been implemented: " + securityType);
         }
 
         private decimal RoundPrice(decimal input, decimal minTick)
@@ -1326,13 +1339,13 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// </summary>
         /// <param name="job">Job we're subscribing for:</param>
         /// <param name="symbols">The symbols to be added keyed by SecurityType</param>
-        public void Subscribe(LiveNodePacket job, IDictionary<SecurityType, List<string>> symbols)
+        public void Subscribe(LiveNodePacket job, IDictionary<SecurityType, List<Symbol>> symbols)
         {
             foreach (var secType in symbols)
                 foreach (var symbol in secType.Value)
                 {
                     var id = GetNextRequestID();
-                    var contract = CreateContract(symbol, secType.Key);
+                    var contract = CreateContract(symbol.Value, secType.Key);
                     Client.RequestMarketData(id, contract, null, false, false);
 
                     var symbolTuple = Tuple.Create(secType.Key, symbol);
@@ -1347,7 +1360,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
         /// </summary>
         /// <param name="job">Job we're processing.</param>
         /// <param name="symbols">The symbols to be removed keyed by SecurityType</param>
-        public void Unsubscribe(LiveNodePacket job, IDictionary<SecurityType, List<string>> symbols)
+        public void Unsubscribe(LiveNodePacket job, IDictionary<SecurityType, List<Symbol>> symbols)
         {
             foreach (var secType in symbols)
                 foreach (var symbol in secType.Value)
@@ -1374,7 +1387,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             var tick = new Tick();
             // in the event of a symbol change this will break since we'll be assigning the
             // new symbol to the permtick which won't be known by the algorithm
-            tick.Symbol = new Symbol(symbol.Item2);
+            tick.Symbol = symbol.Item2;
             tick.Time = GetBrokerTime();
             if (symbol.Item1 == SecurityType.Forex)
             {
@@ -1449,7 +1462,7 @@ namespace QuantConnect.Brokerages.InteractiveBrokers
             var tick = new Tick();
             // in the event of a symbol change this will break since we'll be assigning the
             // new symbol to the permtick which won't be known by the algorithm
-            tick.Symbol = new Symbol(symbol.Item2);
+            tick.Symbol = symbol.Item2;
             tick.Quantity = AdjustQuantity(symbol.Item1, e.Size);
             tick.Time = GetBrokerTime();
             if (symbol.Item1 == SecurityType.Forex)

@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Globalization;
 using QuantConnect.Configuration;
 using QuantConnect.Logging;
 
@@ -27,36 +28,46 @@ namespace QuantConnect.ToolBox.GoogleDownloader
         /// </summary>
         public static void Main(string[] args)
         {
-            if (args.Length != 3)
+            if (args.Length != 4)
             {
-                Console.WriteLine("Usage: GoogleDownloader SYMBOL RESOLUTION PERIOD");
-                Console.WriteLine("SYMBOL = eg SPY");
+                Console.WriteLine("Usage: GoogleDownloader SYMBOLS RESOLUTION FROMDATE TODATE");
+                Console.WriteLine("SYMBOLS = eg SPY,AAPL");
                 Console.WriteLine("RESOLUTION = Minute/Hour");
-                Console.WriteLine("PERIOD = 10 for 10 days intraday data");
+                Console.WriteLine("FROMDATE = yyyymmdd");
+                Console.WriteLine("TODATE = yyyymmdd");
                 Environment.Exit(1);
             }
 
             try
             {
                 // Load settings from command line
-                var symbol = args[0];
+                var symbols = args[0].Split(',');
                 var resolution = (Resolution)Enum.Parse(typeof(Resolution), args[1]);
-                var period = args[2].ToInt32();
+                var startDate = DateTime.ParseExact(args[2], "yyyyMMdd", CultureInfo.InvariantCulture);
+                var endDate = DateTime.ParseExact(args[3], "yyyyMMdd", CultureInfo.InvariantCulture);
 
                 // Load settings from config.json
                 var dataDirectory = Config.Get("data-directory", "../../../Data");
 
-                // Download the data
+                // Create an instance of the downloader
+                const string market = Market.USA;
                 var downloader = new GoogleDataDownloader();
-                var data = downloader.Get(new Symbol(symbol), SecurityType.Equity, resolution, DateTime.UtcNow.AddDays(-period), DateTime.UtcNow);
 
-                // Save the data
-                var writer = new LeanDataWriter(SecurityType.Equity, resolution, symbol, dataDirectory, "usa");
-                writer.Write(data);
+                foreach (var symbol in symbols)
+                {
+                    // Download the data
+                    var sid = SecurityIdentifier.GenerateEquity(symbol, market);
+                    var symbolObject = new Symbol(sid, symbol);
+                    var data = downloader.Get(symbolObject, SecurityType.Equity, resolution, startDate, endDate);
+
+                    // Save the data
+                    var writer = new LeanDataWriter(SecurityType.Equity, resolution, symbolObject, dataDirectory, market);
+                    writer.Write(data);
+                }
             }
             catch (Exception err)
             {
-                Log.Error("GoogleDownloader(): Error: " + err.Message);
+                Log.Error(err);
             }
         }
 

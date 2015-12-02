@@ -22,6 +22,7 @@ using QuantConnect.Data.Market;
 using QuantConnect.Lean.Engine.DataFeeds;
 using QuantConnect.Lean.Engine.DataFeeds.Enumerators;
 using QuantConnect.Securities;
+using QuantConnect.Util;
 
 namespace QuantConnect.Tests.Engine.DataFeeds.Enumerators
 {
@@ -36,11 +37,11 @@ namespace QuantConnect.Tests.Engine.DataFeeds.Enumerators
             var underlying = new List<BaseData>
             {
                 // 0 seconds
-                new TradeBar(reference, "SPY", 10, 20, 5, 15, 123456, period),
+                new TradeBar(reference, Symbols.SPY, 10, 20, 5, 15, 123456, period),
                 // 1 seconds
                 null,
                 // 3 seconds
-                new TradeBar(reference.AddSeconds(2), "SPY", 100, 200, 50, 150, 1234560, period),
+                new TradeBar(reference.AddSeconds(2), Symbols.SPY, 100, 200, 50, 150, 1234560, period),
                 null,
                 null,
                 null,
@@ -50,7 +51,7 @@ namespace QuantConnect.Tests.Engine.DataFeeds.Enumerators
             var timeProvider = new ManualTimeProvider(TimeZones.NewYork);
             timeProvider.SetCurrentTime(reference);
             var exchange = new SecurityExchange(SecurityExchangeHours.AlwaysOpen(TimeZones.NewYork));
-            var fillForward = new LiveFillForwardEnumerator(timeProvider, underlying.GetEnumerator(), exchange, Time.OneSecond, false, Time.EndOfTime, Time.OneSecond);
+            var fillForward = new LiveFillForwardEnumerator(timeProvider, underlying.GetEnumerator(), exchange, Ref.Create(Time.OneSecond), false, Time.EndOfTime, Time.OneSecond);
 
             // first point is always emitted
             Assert.IsTrue(fillForward.MoveNext());

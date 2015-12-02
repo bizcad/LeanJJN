@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading;
 using NUnit.Framework;
 using QuantConnect.Brokerages.InteractiveBrokers;
 using QuantConnect.Configuration;
 using QuantConnect.Interfaces;
+using QuantConnect.Orders;
 using QuantConnect.Securities;
 
 namespace QuantConnect.Tests.Brokerages.InteractiveBrokers
@@ -10,6 +12,8 @@ namespace QuantConnect.Tests.Brokerages.InteractiveBrokers
     [TestFixture, Ignore("These tests require the IBController and IB TraderWorkstation to be installed.")]
     public class InteractiveBrokersForexOrderTests : BrokerageTests
     {
+        // set to true to disable launch of gateway from tests
+        private const bool _manualGatewayControl = false;
         private static bool _gatewayLaunched;
      
         [TestFixtureSetUp]
@@ -23,9 +27,9 @@ namespace QuantConnect.Tests.Brokerages.InteractiveBrokers
             InteractiveBrokersGatewayRunner.Stop();
         }
 
-        protected override string Symbol
+        protected override Symbol Symbol
         {
-            get { return "USDJPY"; }
+            get { return Symbols.USDJPY; }
         }
 
         protected override SecurityType SecurityType
@@ -43,14 +47,14 @@ namespace QuantConnect.Tests.Brokerages.InteractiveBrokers
             get { return 0.01m; }
         }
 
-        protected override decimal GetAskPrice(string symbol, SecurityType securityType)
+        protected override decimal GetAskPrice(Symbol symbol)
         {
             throw new NotImplementedException();
         }
 
         protected override IBrokerage CreateBrokerage(IOrderProvider orderProvider, IHoldingsProvider holdingsProvider)
         {
-            if (!_gatewayLaunched)
+            if (!_manualGatewayControl && !_gatewayLaunched)
             {
                 _gatewayLaunched = true;
                 InteractiveBrokersGatewayRunner.Start(Config.Get("ib-controller-dir"),
@@ -65,7 +69,7 @@ namespace QuantConnect.Tests.Brokerages.InteractiveBrokers
 
         protected override void DisposeBrokerage(IBrokerage brokerage)
         {
-            if (brokerage != null)
+            if (!_manualGatewayControl && brokerage != null)
             {
                 brokerage.Disconnect();
             }

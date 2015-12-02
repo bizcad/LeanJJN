@@ -132,7 +132,7 @@ namespace QuantConnect.Data
 
         /// <summary>
         /// Reader converts each line of the data source into BaseData objects. Each data type creates its own factory method, and returns a new instance of the object 
-        /// each time it is called. 
+        /// each time it is called. The returned object is assumed to be time stamped in the config.ExchangeTimeZone.
         /// </summary>
         /// <param name="config">Subscription data config setup object</param>
         /// <param name="line">Line of the source document</param>
@@ -143,7 +143,9 @@ namespace QuantConnect.Data
         {
             // stub implementation to prevent compile errors in user algorithms
             var dataFeed = isLiveMode ? DataFeedEndpoint.LiveTrading : DataFeedEndpoint.Backtesting;
+#pragma warning disable 618 // This implementation is left here for backwards compatibility of the BaseData API
             return Reader(config, line, date, dataFeed);
+#pragma warning restore 618
         }
 
         /// <summary>
@@ -157,7 +159,9 @@ namespace QuantConnect.Data
         {
             // stub implementation to prevent compile errors in user algorithms
             var dataFeed = isLiveMode ? DataFeedEndpoint.LiveTrading : DataFeedEndpoint.Backtesting;
+#pragma warning disable 618 // This implementation is left here for backwards compatibility of the BaseData API
             var source = GetSource(config, date, dataFeed);
+#pragma warning restore 618
 
             if (isLiveMode)
             {

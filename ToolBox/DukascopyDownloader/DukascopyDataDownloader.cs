@@ -76,7 +76,7 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
         /// </summary>
         /// <param name="symbol"></param>
         /// <returns>Returns true if the symbol is available</returns>
-        public bool HasSymbol(Symbol symbol)
+        public bool HasSymbol(string symbol)
         {
             return _instruments.ContainsKey(symbol);
         }
@@ -86,7 +86,7 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
         /// </summary>
         /// <param name="symbol">The symbol</param>
         /// <returns>The security type</returns>
-        public SecurityType GetSecurityType(Symbol symbol)
+        public SecurityType GetSecurityType(string symbol)
         {
             return _instruments[symbol].Type;
         }
@@ -102,8 +102,8 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
         /// <returns>Enumerable of base data for this symbol</returns>
         public IEnumerable<BaseData> Get(Symbol symbol, SecurityType type, Resolution resolution, DateTime startUtc, DateTime endUtc)
         {
-            if (!_instruments.ContainsKey(symbol))
-                throw new ArgumentException("Invalid symbol requested: " + symbol);
+            if (!_instruments.ContainsKey(symbol.Value))
+                throw new ArgumentException("Invalid symbol requested: " + symbol.Value);
 
             if (type != SecurityType.Forex && type != SecurityType.Cfd)
                 throw new NotSupportedException("SecurityType not available: " + type);
@@ -125,33 +125,15 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
                     case Resolution.Tick:
                         foreach (var tick in ticks)
                         {
-                            yield return new Tick(tick.Time, symbol, Convert.ToDecimal(tick.BidPrice), Convert.ToDecimal(tick.AskPrice));
+                            yield return new Tick(tick.Time, symbol, tick.BidPrice, tick.AskPrice);
                         }
                         break;
 
                     case Resolution.Second:
-                        foreach (var bar in AggregateTicks(symbol, ticks, new TimeSpan(0, 0, 1)))
-                        {
-                            yield return bar;
-                        }
-                        break;
-
                     case Resolution.Minute:
-                        foreach (var bar in AggregateTicks(symbol, ticks, new TimeSpan(0, 1, 0)))
-                        {
-                            yield return bar;
-                        }
-                        break;
-
                     case Resolution.Hour:
-                        foreach (var bar in AggregateTicks(symbol, ticks, new TimeSpan(1, 0, 0)))
-                        {
-                            yield return bar;
-                        }
-                        break;
-
                     case Resolution.Daily:
-                        foreach (var bar in AggregateTicks(symbol, ticks, new TimeSpan(1, 0, 0, 0)))
+                        foreach (var bar in AggregateTicks(symbol, ticks, resolution.ToTimeSpan()))
                         {
                             yield return bar;
                         }
@@ -194,25 +176,25 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
         /// <returns>An enumerable of ticks</returns>
         private IEnumerable<Tick> DownloadTicks(Symbol symbol, DateTime date)
         {
-            var pointValue = _instruments[symbol].PointValue;
+            var pointValue = _instruments[symbol.Value].PointValue;
 
             for (var hour = 0; hour < 24; hour++)
             {
                 var timeOffset = hour * 3600000;
 
                 var url = string.Format(@"http://www.dukascopy.com/datafeed/{0}/{1:D4}/{2:D2}/{3:D2}/{4:D2}h_ticks.bi5",
-                    symbol, date.Year, date.Month - 1, date.Day, hour);
+                    symbol.Value, date.Year, date.Month - 1, date.Day, hour);
 
                 using (var client = new WebClient())
                 {
-                    byte[] bytes = null;
+                    byte[] bytes;
                     try
                     {
                         bytes = client.DownloadData(url);
                     }
                     catch (Exception exception)
                     {
-                        Log.Error(exception.Message);
+                        Log.Error(exception);
                         yield break;
                     }
                     if (bytes != null && bytes.Length > 0)

@@ -77,7 +77,7 @@ namespace QuantConnect.Securities
             _baseCurrencyUnsettledCash = UnsettledCashBook[CashBook.AccountCurrency];
 
             // default to $100,000.00
-            _baseCurrencyCash.Quantity = 100000;
+            _baseCurrencyCash.SetAmount(100000);
         }
 
         #region IDictionary Implementation
@@ -434,7 +434,7 @@ namespace QuantConnect.Securities
         /// <summary>
         /// Indexer for the PortfolioManager class to access the underlying security holdings objects.
         /// </summary>
-        /// <param name="symbol">Symbol indexer</param>
+        /// <param name="symbol">Symbol object indexer</param>
         /// <returns>SecurityHolding class from the algorithm securities</returns>
         public SecurityHolding this[Symbol symbol]
         {
@@ -443,12 +443,23 @@ namespace QuantConnect.Securities
         }
 
         /// <summary>
+        /// Indexer for the PortfolioManager class to access the underlying security holdings objects.
+        /// </summary>
+        /// <param name="ticker">string ticker symbol indexer</param>
+        /// <returns>SecurityHolding class from the algorithm securities</returns>
+        public SecurityHolding this[string ticker]
+        {
+            get { return Securities[ticker].Holdings; }
+            set { Securities[ticker].Holdings = value; }
+        }
+
+        /// <summary>
         /// Set the base currrency cash this algorithm is to manage.
         /// </summary>
         /// <param name="cash">Decimal cash value of portfolio</param>
         public void SetCash(decimal cash) 
         {
-            _baseCurrencyCash.Quantity = cash;
+            _baseCurrencyCash.SetAmount(cash);
         }
 
         /// <summary>
@@ -462,7 +473,7 @@ namespace QuantConnect.Securities
             Cash item;
             if (CashBook.TryGetValue(symbol, out item))
             {
-                item.Quantity = cash;
+                item.SetAmount(cash);
                 item.ConversionRate = conversionRate;
             }
             else
@@ -581,7 +592,7 @@ namespace QuantConnect.Securities
                 var total = security.Holdings.Quantity*dividend.Distribution;
 
                 // assuming USD, we still need to add Currency to the security object
-                _baseCurrencyCash.Quantity += total;
+                _baseCurrencyCash.AddAmount(total);
             }
         }
 
@@ -607,7 +618,7 @@ namespace QuantConnect.Securities
             // we'll model this as a cash adjustment
             var leftOver = quantity - (int) quantity;
             var extraCash = leftOver*split.ReferencePrice;
-            _baseCurrencyCash.Quantity += extraCash;
+            _baseCurrencyCash.AddAmount(extraCash);
 
             security.Holdings.SetHoldings(avgPrice, (int) quantity);
 
@@ -697,10 +708,10 @@ namespace QuantConnect.Securities
                         _unsettledCashAmounts.Remove(item);
 
                         // update unsettled cashbook
-                        UnsettledCashBook[item.Currency].Quantity -= item.Amount;
+                        UnsettledCashBook[item.Currency].AddAmount(-item.Amount);
 
                         // update settled cashbook
-                        CashBook[item.Currency].Quantity += item.Amount;
+                        CashBook[item.Currency].AddAmount(item.Amount);
                     }
                 }
             }

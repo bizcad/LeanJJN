@@ -31,7 +31,7 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
         {
             if (args.Length != 4)
             {
-                Console.WriteLine("Usage: DukascopyDownloader SYMBOL RESOLUTION FROMDATE TODATE");
+                Console.WriteLine("Usage: DukascopyDownloader SYMBOLS RESOLUTION FROMDATE TODATE");
                 Console.WriteLine("SYMBOLS = eg EURUSD,USDJPY");
                 Console.WriteLine("RESOLUTION = Tick/Second/Minute/Hour/Daily/All");
                 Console.WriteLine("FROMDATE = yyyymmdd");
@@ -52,7 +52,7 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
                 var dataDirectory = Config.Get("data-directory", "../../../Data");
 
                 // Download the data
-                const string market = "dukascopy";
+                const string market = Market.Dukascopy;
                 var downloader = new DukascopyDataDownloader();
 
                 foreach (var symbol in symbols)
@@ -64,38 +64,52 @@ namespace QuantConnect.ToolBox.DukascopyDownloader
                 foreach (var symbol in symbols)
                 {
                     var securityType = downloader.GetSecurityType(symbol);
-                    var data = downloader.Get(new Symbol(symbol), securityType, resolution, startDate, endDate);
+                    var symbolObject = new Symbol(GetSid(symbol, securityType), symbol);
+                    var data = downloader.Get(symbolObject, securityType, resolution, startDate, endDate);
 
                     if (allResolutions)
                     {
                         var ticks = data.Cast<Tick>().ToList();
 
                         // Save the data (tick resolution)
-                        var writer = new LeanDataWriter(securityType, resolution, symbol, dataDirectory, market);
+                        var writer = new LeanDataWriter(securityType, resolution, symbolObject, dataDirectory, market);
                         writer.Write(ticks);
 
                         // Save the data (other resolutions)
                         foreach (var res in new[] { Resolution.Second, Resolution.Minute, Resolution.Hour, Resolution.Daily })
                         {
-                            var resData = DukascopyDataDownloader.AggregateTicks(new Symbol(symbol), ticks, res.ToTimeSpan());
+                            var resData = DukascopyDataDownloader.AggregateTicks(symbolObject, ticks, res.ToTimeSpan());
 
-                            writer = new LeanDataWriter(securityType, res, symbol, dataDirectory, market);
+                            writer = new LeanDataWriter(securityType, res, symbolObject, dataDirectory, market);
                             writer.Write(resData);
                         }
                     }
                     else
                     {
                         // Save the data (single resolution)
-                        var writer = new LeanDataWriter(securityType, resolution, symbol, dataDirectory, market);
+                        var writer = new LeanDataWriter(securityType, resolution, symbolObject, dataDirectory, market);
                         writer.Write(data);
                     }
                 }
             }
             catch (Exception err)
             {
-                Log.Error("DukascopyDownloader(): {0}", err.Message);
+                Log.Error(err);
             }
         }
 
+        static SecurityIdentifier GetSid(string symbol, SecurityType securityType)
+        {
+            if (securityType == SecurityType.Forex)
+            {
+                return SecurityIdentifier.GenerateForex(symbol, Market.Dukascopy);
+            }
+            if (securityType == SecurityType.Cfd)
+            {
+                return SecurityIdentifier.GenerateCfd(symbol, Market.Dukascopy);
+            }
+
+            throw new NotImplementedException("The specfied security type has not been implemented yet: " + securityType);
+        }
     }
 }
