@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 
 using QuantConnect;
+using QuantConnect.Data;
 using QuantConnect.Orders;
 using QuantConnect.Indicators;
 
@@ -105,6 +106,15 @@ namespace QuantConnect.Algorithm.CSharp
         private Dictionary<string, MSAStrategy> Flaggers = new Dictionary<string, MSAStrategy>();
 
         /*===========| Trailing Orders Handlers |===========*/
+        // Dictionary used to store the PSAR indicator for each symbol.
+        private Dictionary<string, ParabolicStopAndReverse> PSARDict = new Dictionary<string, ParabolicStopAndReverse>();
+
+        // This flag is used to indicate we've switched from a global, non changing
+        // stop loss to a dynamic trailing stop using the PSAR.
+        private Dictionary<string, bool> EnablePsarTrailingStop = new Dictionary<string, bool>();
+
+        // This is the ticket from our stop loss order (exit)
+        private Dictionary<string, OrderTicket> StopLossTickets = new Dictionary<string, OrderTicket>();
 
         /*===========| Logging Stuff |===========*/
         List<TradeBarRecord> TradeBarSeries = new List<TradeBarRecord>();
@@ -137,6 +147,10 @@ namespace QuantConnect.Algorithm.CSharp
 
                 // Populate the Triggers dictionary with LWStrategy objects.
                 Triggers.Add(symbol, new DIFStrategy(priceIdentity, DecyclePeriod, InvFisherPeriod, Threshold, Tolerance, 0));
+
+                // Populate the PSARDict
+                PSARDict.Add(symbol, new ParabolicStopAndReverse(afStart: 0.01m, afIncrement: 0.001m, afMax: 0.2m));
+                RegisterIndicator(symbol, PSARDict[symbol], Resolution.Minute);
 
                 // Strategy warm-up.
                 var history = History(symbol, (PreviousDaysN + 1) * 390);
@@ -176,23 +190,18 @@ namespace QuantConnect.Algorithm.CSharp
 
             #endregion Schedules
         }
-             
 
-        public override void OnData(Data.Slice data)
+        public override void OnData(Slice data)
         {
-            if (isNormalOperativeTime)
-            {
-                foreach (var symbol in Symbols)
-                {
-                    OrderSignal actualOrder = OrderSignal.doNothing;
-                    // Check if there is new data for the symbol.
-                    if (!data.ContainsKey(symbol)) continue;
 
-                    // Update the flag only if there is some new signal.
-                    if (Flaggers[symbol].ActualSignal != OrderSignal.doNothing)
-                    {
-                        OrderFlags[symbol] = Flaggers[symbol].ActualSignal;
-                    }
+            foreach (var symbol in Symbols)
+            {
+                // Check if there is new data for the symbol.
+                if (!data.ContainsKey(symbol)) continue;
+                OrderSignal actualOrder = OrderSignal.doNothing;
+                if (isNormalOperativeTime)
+                {
+                    UpdateOrderFlag(symbol);
 
                     if (!Portfolio[symbol].Invested)
                     {
@@ -203,18 +212,23 @@ namespace QuantConnect.Algorithm.CSharp
                         actualOrder = ScanForExit(symbol);
                     }
                     ExecuteOrder(symbol, actualOrder);
-
-                    TradeBarSeries.Add(new TradeBarRecord(Time,
-                                                          symbol,
-                                                          Securities[symbol].Close,
-                                                          Triggers[symbol].DecycleTrend,
-                                                          Triggers[symbol].InverseFisher,
-                                                          Flaggers[symbol].SmoothedSeries,
-                                                          Enum.GetName(typeof(OrderSignal), OrderFlags[symbol]),
-                                                          Enum.GetName(typeof(OrderSignal), actualOrder)));
                 }
+                else if (isMarketAboutToClose && noOvernight) ClosePosition(symbol);
+
+                TradeBarSeries.Add(new TradeBarRecord(Time,
+                                                      symbol,
+                                                      Securities[symbol].Close,
+                                                      Triggers[symbol].DecycleTrend,
+                                                      Triggers[symbol].InverseFisher,
+                                                      Flaggers[symbol].SmoothedSeries,
+                                                      PSARDict[symbol],
+                                                      Enum.GetName(typeof(OrderSignal), Flaggers[symbol].ActualSignal),
+                                                      Enum.GetName(typeof(OrderSignal), actualOrder)));
             }
+
         }
+
+
 
         public override void OnOrderEvent(OrderEvent orderEvent)
         {
@@ -260,13 +274,22 @@ namespace QuantConnect.Algorithm.CSharp
 
             var closedTrades = JsonConvert.SerializeObject(TradeBuilder.ClosedTrades);
             File.WriteAllText("LW_MSA_closedTrades.json", closedTrades);
-            
+
             var transactions = JsonConvert.SerializeObject(Transactions.GetOrders(o => true));
             File.WriteAllText("LW_MSA_transactions.json", transactions);
         }
         # endregion
 
         # region Algorithm methods
+
+        private void UpdateOrderFlag(string symbol)
+        {
+            // Update the flag only if there is some new signal.
+            if (Flaggers[symbol].ActualSignal != OrderSignal.doNothing)
+            {
+                OrderFlags[symbol] = Flaggers[symbol].ActualSignal;
+            }
+        }
 
         /// <summary>
         /// Scans for entry opportunities.
@@ -378,6 +401,29 @@ namespace QuantConnect.Algorithm.CSharp
 
                 default: break;
             }
+        }
+
+        /// <summary>
+        /// Closes all positions.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <returns></returns>
+        private OrderSignal ClosePosition(string symbol)
+        {
+            OrderSignal actualOrder;
+
+            if (Portfolio[symbol].IsLong)
+            {
+                actualOrder = OrderSignal.closeLong;
+                Log("<=== Closing EOD Long position " + symbol);
+            }
+            else if (Portfolio[symbol].IsShort)
+            {
+                actualOrder = OrderSignal.closeShort;
+                Log("===> Closing EOD Short position " + symbol);
+            }
+            else actualOrder = OrderSignal.doNothing;
+            return actualOrder;
         }
 
         private void CloseDay()

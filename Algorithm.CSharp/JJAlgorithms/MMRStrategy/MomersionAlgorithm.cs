@@ -70,7 +70,7 @@ namespace QuantConnect.Algorithm.CSharp
                 AddSecurity(SecurityType.Equity, symbol, Resolution.Daily);
                 // Define and register an Identity indicator with the price, this indicator will be
                 // injected in the Strategy.
-                var PriceIdentity = Identity(new Symbol(symbol), selector: Field.Close);
+                var PriceIdentity = Identity(new Symbol(new SecurityIdentifier(), symbol), selector: Field.Close);
 
                 // Define the Strategies for this symbol
                 MomentumStrategy.Add(symbol, new CrossEMAStrategy(PriceIdentity));
