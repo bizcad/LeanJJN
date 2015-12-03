@@ -217,7 +217,10 @@ namespace QuantConnect.Lean.Engine
                 {
                     if (command == null) continue;
                     Log.Trace("AlgorithmManager.Run(): Executing {0}", command);
-                    command.Run(algorithm);
+                    var result = command.Run(algorithm);
+
+                    // send the result of the command off to the result handler
+                    results.Messages.Enqueue(result);
                 }
 
                 var time = timeSlice.Time;
@@ -320,7 +323,7 @@ namespace QuantConnect.Lean.Engine
                         {
                             algorithm.Securities.Remove(ticket.Symbol);
                             delistingTickets.RemoveAt(i--);
-                            Log.Trace("AlgorithmManager.Run(): Delisted Security removed: " + ticket.Symbol.Permtick);
+                            Log.Trace("AlgorithmManager.Run(): Delisted Security removed: " + ticket.Symbol.ToString());
                         }
                     }
                 }
@@ -366,7 +369,7 @@ namespace QuantConnect.Lean.Engine
                             algorithm.RunTimeError = err;
                             _algorithm.Status = AlgorithmStatus.RuntimeError;
                             var locator = executingMarginCall ? "Portfolio.MarginCallModel.ExecuteMarginCall" : "OnMarginCall";
-                            Log.Error(string.Format("AlgorithmManager.Run(): RuntimeError: {0}: ", locator) + err.Message + " STACK >>> " + err.StackTrace);
+                            Log.Error(string.Format("AlgorithmManager.Run(): RuntimeError: {0}: ", locator) + err);
                             return;
                         }
                     }
@@ -381,7 +384,7 @@ namespace QuantConnect.Lean.Engine
                         {
                             algorithm.RunTimeError = err;
                             _algorithm.Status = AlgorithmStatus.RuntimeError;
-                            Log.Error("AlgorithmManager.Run(): RuntimeError: OnMarginCallWarning: " + err.Message + " STACK >>> " + err.StackTrace);
+                            Log.Error("AlgorithmManager.Run(): RuntimeError: OnMarginCallWarning: " + err);
                             return;
                         }
                     }
@@ -408,7 +411,7 @@ namespace QuantConnect.Lean.Engine
                     {
                         algorithm.RunTimeError = err;
                         _algorithm.Status = AlgorithmStatus.RuntimeError;
-                        Log.Error("AlgorithmManager.Run(): RuntimeError: OnSecuritiesChanged event: " + err.Message);
+                        Log.Error("AlgorithmManager.Run(): RuntimeError: OnSecuritiesChanged event: " + err);
                         return;
                     }
                 }
@@ -416,7 +419,7 @@ namespace QuantConnect.Lean.Engine
                 // apply dividends
                 foreach (var dividend in timeSlice.Slice.Dividends.Values)
                 {
-                    Log.Trace("AlgorithmManager.Run(): Applying Dividend for " + dividend.Symbol, true);
+                    Log.Trace("AlgorithmManager.Run(): Applying Dividend for " + dividend.Symbol.ToString(), true);
                     algorithm.Portfolio.ApplyDividend(dividend);
                 }
 
@@ -425,7 +428,7 @@ namespace QuantConnect.Lean.Engine
                 {
                     try
                     {
-                        Log.Trace("AlgorithmManager.Run(): Applying Split for " + split.Symbol, true);
+                        Log.Trace("AlgorithmManager.Run(): Applying Split for " + split.Symbol.ToString(), true);
                         algorithm.Portfolio.ApplySplit(split);
                         // apply the split to open orders as well in raw mode, all other modes are split adjusted
                         if (_liveMode || algorithm.Securities[split.Symbol].SubscriptionDataConfig.DataNormalizationMode == DataNormalizationMode.Raw)
@@ -439,7 +442,7 @@ namespace QuantConnect.Lean.Engine
                     {
                         algorithm.RunTimeError = err;
                         _algorithm.Status = AlgorithmStatus.RuntimeError;
-                        Log.Error("AlgorithmManager.Run(): RuntimeError: Split event: " + err.Message);
+                        Log.Error("AlgorithmManager.Run(): RuntimeError: Split event: " + err);
                         return;
                     }
                 }
@@ -463,7 +466,7 @@ namespace QuantConnect.Lean.Engine
                 {
                     algorithm.RunTimeError = err;
                     _algorithm.Status = AlgorithmStatus.RuntimeError;
-                    Log.Error("AlgorithmManager.Run(): RuntimeError: Consolidators update: " + err.Message);
+                    Log.Error("AlgorithmManager.Run(): RuntimeError: Consolidators update: " + err);
                     return;
                 }
 
@@ -491,7 +494,7 @@ namespace QuantConnect.Lean.Engine
                     {
                         algorithm.RunTimeError = err;
                         _algorithm.Status = AlgorithmStatus.RuntimeError;
-                        Log.Error("AlgorithmManager.Run(): RuntimeError: Custom Data: " + err.Message + " STACK >>> " + err.StackTrace);
+                        Log.Error("AlgorithmManager.Run(): RuntimeError: Custom Data: " + err);
                         return;
                     }
                 }
@@ -516,7 +519,7 @@ namespace QuantConnect.Lean.Engine
                 {
                     algorithm.RunTimeError = err;
                     _algorithm.Status = AlgorithmStatus.RuntimeError;
-                    Log.Error("AlgorithmManager.Run(): RuntimeError: Dividends/Splits/Delistings: " + err.Message + " STACK >>> " + err.StackTrace);
+                    Log.Error("AlgorithmManager.Run(): RuntimeError: Dividends/Splits/Delistings: " + err);
                     return;
                 }
 
@@ -533,7 +536,7 @@ namespace QuantConnect.Lean.Engine
                 {
                     algorithm.RunTimeError = err;
                     _algorithm.Status = AlgorithmStatus.RuntimeError;
-                    Log.Error("AlgorithmManager.Run(): RuntimeError: New Style Mode: " + err.Message + " STACK >>> " + err.StackTrace);
+                    Log.Error("AlgorithmManager.Run(): RuntimeError: New Style Mode: " + err);
                     return;
                 }
 
@@ -549,7 +552,7 @@ namespace QuantConnect.Lean.Engine
                 {
                     algorithm.RunTimeError = err;
                     _algorithm.Status = AlgorithmStatus.RuntimeError;
-                    Log.Error("AlgorithmManager.Run(): RuntimeError: Slice: " + err.Message + " STACK >>> " + err.StackTrace);
+                    Log.Error("AlgorithmManager.Run(): RuntimeError: Slice: " + err);
                     return;
                 }
 
@@ -577,7 +580,7 @@ namespace QuantConnect.Lean.Engine
             {
                 _algorithm.Status = AlgorithmStatus.RuntimeError;
                 algorithm.RunTimeError = new Exception("Error running OnEndOfAlgorithm(): " + err.Message, err.InnerException);
-                Log.Error("AlgorithmManager.OnEndOfAlgorithm(): " + err.Message + " STACK >>> " + err.StackTrace);
+                Log.Error("AlgorithmManager.OnEndOfAlgorithm(): " + err);
                 return;
             }
 
@@ -832,7 +835,7 @@ namespace QuantConnect.Lean.Engine
                 // submit an order to liquidate on market close
                 if (delisting.Type == DelistingType.Warning)
                 {
-                    Log.Trace("AlgorithmManager.Run(): Security delisting warning: " + delisting.Symbol);
+                    Log.Trace("AlgorithmManager.Run(): Security delisting warning: " + delisting.Symbol.ToString());
                     var security = algorithm.Securities[delisting.Symbol];
                     var submitOrderRequest = new SubmitOrderRequest(OrderType.MarketOnClose, security.Type, security.Symbol,
                         -security.Holdings.Quantity, 0, 0, algorithm.UtcTime, "Liquidate from delisting");
@@ -842,9 +845,9 @@ namespace QuantConnect.Lean.Engine
                 }
                 else
                 {
-                    Log.Trace("AlgorithmManager.Run(): Security delisted: " + delisting.Symbol);
+                    Log.Trace("AlgorithmManager.Run(): Security delisted: " + delisting.Symbol.ToString());
                     algorithm.Securities.Remove(delisting.Symbol);
-                    Log.Trace("AlgorithmManager.Run(): Security removed: " + delisting.Symbol);
+                    Log.Trace("AlgorithmManager.Run(): Security removed: " + delisting.Symbol.ToString());
                 }
             }
         }
@@ -863,7 +866,7 @@ namespace QuantConnect.Lean.Engine
             {
                 algorithm.RunTimeError = err;
                 _algorithm.Status = AlgorithmStatus.RuntimeError;
-                Log.Error("AlgorithmManager.Run(): RuntimeError: SampleBenchmark: " + err.Message + " STACK >>> " + err.StackTrace);
+                Log.Error(err);
             }
         }
 

@@ -9,9 +9,7 @@
     "environment": "backtesting",
 
     // algorithm class selector
-    //"algorithm-type-name": "BasicTemplateAlgorithm",
-    //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
-    "algorithm-type-name": "LittleWingPlusMSA",
+    "algorithm-type-name": "BasicTemplateAlgorithm",
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
     "algorithm-language": "CSharp",
@@ -24,8 +22,7 @@
     //"algorithm-location": "QuantConnect.Algorithm.Java.dll",
 
     // engine
-    //"data-folder": "../../../Data/",
-    "data-folder": "C:\\Users\\JJ\\Dropbox\\JJ\\data\\",
+    "data-folder": "../../../Data/",
 
     // handlers
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
@@ -37,6 +34,7 @@
     //"command-queue-handler": "QuantConnect.Queues.FileCommandQueueHandler",
     // used by the FileComandQueueHandler, serialize a ICommand and it will be run against algorithm
     "command-json-file": "command.json",
+    "map-file-provider": "QuantConnect.Data.Auxiliary.LocalDiskMapFileProvider",
 
     // if one uses "true" as string in following token, market hours
     // will remain open all hours and all days.

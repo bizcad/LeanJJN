@@ -32,7 +32,7 @@ namespace QuantConnect.ToolBox.OandaDownloader
         {
             if (args.Length != 4)
             {
-                Console.WriteLine("Usage: OandaDownloader SYMBOL RESOLUTION FROMDATE TODATE");
+                Console.WriteLine("Usage: OandaDownloader SYMBOLS RESOLUTION FROMDATE TODATE");
                 Console.WriteLine("SYMBOLS = eg EURUSD,USDJPY");
                 Console.WriteLine("RESOLUTION = Second/Minute/Hour/Daily/All");
                 Console.WriteLine("FROMDATE = yyyymmdd");
@@ -54,8 +54,8 @@ namespace QuantConnect.ToolBox.OandaDownloader
                 var accessToken = Config.Get("access-token", "73eba38ad5b44778f9a0c0fec1a66ed1-44f47f052c897b3e1e7f24196bbc071f");
                 var accountId = Convert.ToInt32(Config.Get("account-id", "621396"));
 
-                // Download the data
-                const string market = "oanda";
+                // Create an instance of the downloader
+                const string market = Market.Oanda;
                 var downloader = new OandaDataDownloader(accessToken, accountId);
 
                 foreach (var symbol in symbols)
@@ -66,37 +66,39 @@ namespace QuantConnect.ToolBox.OandaDownloader
 
                 foreach (var symbol in symbols)
                 {
+                    // Download the data
                     var securityType = downloader.GetSecurityType(symbol);
-                    var data = downloader.Get(new Symbol(symbol), securityType, resolution, startDate, endDate);
+                    var symbolObject = ConvertSymbol(symbol, securityType);
+                    var data = downloader.Get(symbolObject, securityType, resolution, startDate, endDate);
 
                     if (allResolutions)
                     {
                         var bars = data.Cast<TradeBar>().ToList();
 
                         // Save the data (second resolution)
-                        var writer = new LeanDataWriter(securityType, resolution, symbol, dataDirectory, market);
+                        var writer = new LeanDataWriter(securityType, resolution, symbolObject, dataDirectory, market);
                         writer.Write(bars);
 
                         // Save the data (other resolutions)
                         foreach (var res in new[] { Resolution.Minute, Resolution.Hour, Resolution.Daily })
                         {
-                            var resData = AggregateBars(new Symbol(symbol), bars, res.ToTimeSpan());
+                            var resData = AggregateBars(symbolObject, bars, res.ToTimeSpan());
 
-                            writer = new LeanDataWriter(securityType, res, symbol, dataDirectory, market);
+                            writer = new LeanDataWriter(securityType, res, symbolObject, dataDirectory, market);
                             writer.Write(resData);
                         }
                     }
                     else
                     {
                         // Save the data (single resolution)
-                        var writer = new LeanDataWriter(securityType, resolution, symbol, dataDirectory, market);
+                        var writer = new LeanDataWriter(securityType, resolution, symbolObject, dataDirectory, market);
                         writer.Write(data);
                     }
                 }
             }
             catch (Exception err)
             {
-                Log.Error("OandaDownloader(): Error: " + err.Message);
+                Log.Error(err);
             }
         }
 
@@ -124,6 +126,18 @@ namespace QuantConnect.ToolBox.OandaDownloader
                      });
         }
 
+        private static Symbol ConvertSymbol(string instrument, SecurityType securityType)
+        {
+            if (securityType == SecurityType.Forex)
+            {
+                return new Symbol(SecurityIdentifier.GenerateForex(instrument, Market.Oanda), instrument);
+            }
+            if (securityType == SecurityType.Cfd)
+            {
+                return new Symbol(SecurityIdentifier.GenerateCfd(instrument, Market.Oanda), instrument);
+            }
 
+            throw new NotImplementedException("The specfied security type has not been implemented yet: " + securityType);
+        }
     }
 }

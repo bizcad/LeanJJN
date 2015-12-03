@@ -74,7 +74,7 @@ namespace QuantConnect.Data
             DataType = typeof (TradeBar);
             SecurityType = SecurityType.Equity;
             TimeZone = TimeZones.NewYork;
-            Market = "usa";
+            Market = QuantConnect.Market.USA;
             IsCustomData = false;
         }
 
@@ -150,7 +150,7 @@ namespace QuantConnect.Data
             SecurityType = config.SecurityType;
             Market = config.Market;
             IsCustomData = config.IsCustomData;
-            TimeZone = config.TimeZone;
+            TimeZone = config.DataTimeZone;
         }
     }
 }
