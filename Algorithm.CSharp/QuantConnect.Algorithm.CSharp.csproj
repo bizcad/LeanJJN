@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -48,6 +49,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BasicTemplateAlgorithm.cs" />
+    <Compile Include="BizcadAlgorithms\IBetSizer.cs" />
+    <Compile Include="BizcadAlgorithms\ILimitPriceCalculator.cs" />
+    <Compile Include="BizcadAlgorithms\InstantTrendBetSizer.cs" />
+    <Compile Include="BizcadAlgorithms\InstantTrendLimitPriceCalculator.cs" />
+    <Compile Include="BizcadAlgorithms\IPositionInventory.cs" />
+    <Compile Include="BizcadAlgorithms\ISig.cs" />
+    <Compile Include="BizcadAlgorithms\ISigSerializable.cs" />
+    <Compile Include="BizcadAlgorithms\MatchedTrade.cs" />
+    <Compile Include="BizcadAlgorithms\MultiSignalAlgorithmQC.cs" />
+    <Compile Include="BizcadAlgorithms\OrderTransaction.cs" />
+    <Compile Include="BizcadAlgorithms\OrderTransactionFactory.cs" />
+    <Compile Include="BizcadAlgorithms\OrderTransactionProcessor.cs" />
+    <Compile Include="BizcadAlgorithms\PositionInventoryFifo.cs" />
+    <Compile Include="BizcadAlgorithms\PositionInventoryLifo.cs" />
+    <Compile Include="BizcadAlgorithms\Sig9.cs" />
+    <Compile Include="BizcadAlgorithms\SigC.cs" />
+    <Compile Include="BizcadAlgorithms\SignalInfo.cs" />
     <Compile Include="Common\AssemblyLocator.cs" />
     <Compile Include="Common\CsvSerializer.cs" />
     <Compile Include="Common\Global.cs" />
@@ -133,6 +151,10 @@
     <ProjectReference Include="..\Indicators\QuantConnect.Indicators.csproj">
       <Project>{73fb2522-c3ed-4e47-8e3d-afad48a6b888}</Project>
       <Name>QuantConnect.Indicators</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Logging\QuantConnect.Logging.csproj">
+      <Project>{01911409-86be-4e7d-9947-df714138610d}</Project>
+      <Name>QuantConnect.Logging</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
