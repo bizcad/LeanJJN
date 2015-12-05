@@ -58,17 +58,17 @@ namespace QuantConnect.Algorithm.CSharp
         /// <summary>
         /// Close all positions before market close.
         /// </summary>
-        private bool noOvernight = false;
+        private bool noOvernight = true;
 
         /*===========| LW Control Panel |===========*/
-        private const int DecyclePeriod = 10;
-        private const int InvFisherPeriod = 270;
+        private const int DecyclePeriod = 15;
+        private const int InvFisherPeriod = 290;
         private const decimal Threshold = 0.9m;
         private const decimal Tolerance = 0.001m;
         private bool resetAtEndOfDayLW = false;
 
         /*===========| MSA Control Panel |===========*/
-        private const int SmoothedSeriesPeriod = 15;
+        private const int SmoothedSeriesPeriod = 30;
         private const int PreviousDaysN = 20;
         private const int RunsPerDay = 5;
         private const decimal MinimumRunThreshold = 0.005m;
@@ -175,7 +175,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             Schedule.Event("MarketOpenSpan")
                 .EveryDay()
-                .At(9, 30)
+                .At(9, 40)
                 .Run(() => isMarketJustOpen = false);
 
             Schedule.Event("MarketAboutToClose")
@@ -211,9 +211,12 @@ namespace QuantConnect.Algorithm.CSharp
                     {
                         actualOrder = ScanForExit(symbol);
                     }
-                    ExecuteOrder(symbol, actualOrder);
                 }
-                else if (isMarketAboutToClose && noOvernight) ClosePosition(symbol);
+                else if (isMarketAboutToClose && noOvernight)
+                {
+                    actualOrder = ClosePosition(symbol);
+                }
+                ExecuteOrder(symbol, actualOrder);
 
                 TradeBarSeries.Add(new TradeBarRecord(Time,
                                                       symbol,

@@ -57,7 +57,6 @@
     <Compile Include="BizcadAlgorithms\ISig.cs" />
     <Compile Include="BizcadAlgorithms\ISigSerializable.cs" />
     <Compile Include="BizcadAlgorithms\MatchedTrade.cs" />
-    <Compile Include="BizcadAlgorithms\MultiSignalAlgorithmQC.cs" />
     <Compile Include="BizcadAlgorithms\OrderTransaction.cs" />
     <Compile Include="BizcadAlgorithms\OrderTransactionFactory.cs" />
     <Compile Include="BizcadAlgorithms\OrderTransactionProcessor.cs" />

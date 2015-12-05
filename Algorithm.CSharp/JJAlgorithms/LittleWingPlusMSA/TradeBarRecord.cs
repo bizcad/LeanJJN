@@ -39,7 +39,7 @@ namespace QuantConnect.Algorithm.CSharp
         string _actualOrder;
 
         public TradeBarRecord(DateTime ObsTime, string Symbol, decimal ClosePrice, decimal Decycle, decimal DecycleInverseFisher,
-            decimal PSAR, decimal SmoothedSeries, string Flag, string ActualOrder)
+            decimal SmoothedSeries, decimal PSAR, string Flag, string ActualOrder)
         {
             _time = ObsTime;
             _symbol = Symbol;
