@@ -25,12 +25,14 @@ namespace QuantConnect.Algorithm.CSharp
         #region Algorithm Control Panel
         /*===========| Algorithm Global Variables |===========*/
         private DateTime _startDate = new DateTime(2015, 07, 01);
-        private DateTime _endDate = new DateTime(2015, 09, 30);
-        private decimal _portfolioInitialCash = 26000 * 4;
+        private DateTime _endDate = new DateTime(2015, 11, 30);
+        private decimal _portfolioInitialCash = 25000 * 26;
         /// <summary>
         /// The symbols to be used by the strategy.
         /// </summary>
-        private static string[] Symbols = { "AMZN", "BP", "JNJ", "JPM" };
+        private static string[] Symbols = { "AAPL", "ABEV", "BABA", "BAC", "BP" , "C"  , "CSCO", "CVS" , "F"  , "FB",
+                                            "FOXA", "GE"  , "INTC", "JPM", "KMI", "MFG", "MSFT", "ORCL", "PFE", "SPY",
+                                            "T"   , "UTX" ,  "VZ" , "WFC", "WMT", "XOM" };
         /// <summary>
         /// The maximum leverage.
         /// </summary>
@@ -117,7 +119,7 @@ namespace QuantConnect.Algorithm.CSharp
         private Dictionary<string, OrderTicket> StopLossTickets = new Dictionary<string, OrderTicket>();
 
         /*===========| Logging Stuff |===========*/
-        List<TradeBarRecord> TradeBarSeries = new List<TradeBarRecord>();
+        TradeBarRecord TradeBarSeries = new TradeBarRecord();
 
         #endregion
 
@@ -171,6 +173,10 @@ namespace QuantConnect.Algorithm.CSharp
                     isMarketJustOpen = true;
                     isMarketAboutToClose = false;
                     Log(string.Format("========== {0} Market Open ==========", Time.DayOfWeek));
+                    foreach (var symbol in Symbols)
+                    {
+                        PSARDict[symbol].Reset();
+                    }
                 });
 
             Schedule.Event("MarketOpenSpan")
@@ -218,15 +224,15 @@ namespace QuantConnect.Algorithm.CSharp
                 }
                 ExecuteOrder(symbol, actualOrder);
 
-                TradeBarSeries.Add(new TradeBarRecord(Time,
-                                                      symbol,
-                                                      Securities[symbol].Close,
-                                                      Triggers[symbol].DecycleTrend,
-                                                      Triggers[symbol].InverseFisher,
-                                                      Flaggers[symbol].SmoothedSeries,
-                                                      PSARDict[symbol],
-                                                      Enum.GetName(typeof(OrderSignal), Flaggers[symbol].ActualSignal),
-                                                      Enum.GetName(typeof(OrderSignal), actualOrder)));
+                TradeBarSeries.Add(Time,
+                                   symbol,
+                                   Securities[symbol].Close,
+                                   Triggers[symbol].DecycleTrend,
+                                   Triggers[symbol].InverseFisher,
+                                   Flaggers[symbol].SmoothedSeries,
+                                   PSARDict[symbol],
+                                   Enum.GetName(typeof(OrderSignal), Flaggers[symbol].ActualSignal),
+                                   Enum.GetName(typeof(OrderSignal), actualOrder));
             }
 
         }
@@ -301,8 +307,16 @@ namespace QuantConnect.Algorithm.CSharp
         /// <returns>The actual order signal</returns>
         private OrderSignal ScanForEntry(string symbol)
         {
-            // First approach, just check if the Trigger has the same signal as the Flag. 
-            return (Triggers[symbol].ActualSignal == OrderFlags[symbol]) ? Triggers[symbol].ActualSignal : OrderSignal.doNothing;
+            var actualSignal = OrderSignal.doNothing;
+            if (Triggers[symbol].ActualSignal == OrderFlags[symbol])
+            {
+                if (   (OrderFlags[symbol] == OrderSignal.goLong  && PSARDict[symbol] < Securities[symbol].Close)
+                    || (OrderFlags[symbol] == OrderSignal.goShort && PSARDict[symbol] > Securities[symbol].Close))
+                {
+                    actualSignal = Triggers[symbol].ActualSignal;
+                }
+            }
+            return actualSignal;
         }
 
         private OrderSignal ScanForExit(string symbol)

@@ -1,55 +1,63 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using Newtonsoft.Json;
-using QuantConnect.Indicators;
 
 namespace QuantConnect.Algorithm.CSharp
 {
     public class TradeBarRecord
     {
-        [JsonProperty(PropertyName = "date")]
-        DateTime _time;
+        [JsonProperty(PropertyName = "ActualOrder")]
+        private List<string> _actualOrder;
 
-        [JsonProperty(PropertyName="Symbol")]
-        string _symbol;
-
-        [JsonProperty(PropertyName="ClosePrice")]
-        decimal _closePrice;
+        [JsonProperty(PropertyName = "ClosePrice")]
+        private List<decimal> _closePrice;
 
         [JsonProperty(PropertyName = "Decycle")]
-        decimal _decycle;
-
-        [JsonProperty(PropertyName = "SmoothedSeries")]
-        decimal _smoothedSeries;
+        private List<decimal> _decycle;
 
         [JsonProperty(PropertyName = "DecycleInverseFisher")]
-        decimal _decycleInverseFisher;
-
-        [JsonProperty(PropertyName = "PSAR")]
-        decimal _PSAR;
+        private List<decimal> _decycleInverseFisher;
 
         [JsonProperty(PropertyName = "Flag")]
-        string _flag;
+        private List<string> _flag;
 
-        [JsonProperty(PropertyName = "ActualOrder")]
-        string _actualOrder;
+        [JsonProperty(PropertyName = "PSAR")]
+        private List<decimal> _PSAR;
 
-        public TradeBarRecord(DateTime ObsTime, string Symbol, decimal ClosePrice, decimal Decycle, decimal DecycleInverseFisher,
+        [JsonProperty(PropertyName = "SmoothedSeries")]
+        private List<decimal> _smoothedSeries;
+
+        [JsonProperty(PropertyName = "Symbol")]
+        private List<string> _symbol;
+
+        [JsonProperty(PropertyName = "date")]
+        private List<DateTime> _time;
+
+        public TradeBarRecord()
+        {
+            _time = new List<DateTime>();
+            _symbol = new List<string>();
+            _closePrice = new List<decimal>();
+            _decycle = new List<decimal>();
+            _decycleInverseFisher = new List<decimal>();
+            _smoothedSeries = new List<decimal>();
+            _PSAR = new List<decimal>();
+            _flag = new List<string>();
+            _actualOrder = new List<string>();
+        }
+
+        public void Add(DateTime ObsTime, string Symbol, decimal ClosePrice, decimal Decycle, decimal DecycleInverseFisher,
             decimal SmoothedSeries, decimal PSAR, string Flag, string ActualOrder)
         {
-            _time = ObsTime;
-            _symbol = Symbol;
-            _closePrice = ClosePrice;
-            _decycle = Decycle;
-            _decycleInverseFisher = DecycleInverseFisher;
-            _smoothedSeries = SmoothedSeries;
-            _PSAR = PSAR;
-            _flag = Flag;
-            _actualOrder = ActualOrder;
+            _time.Add(ObsTime);
+            _symbol.Add(Symbol);
+            _closePrice.Add(ClosePrice);
+            _decycle.Add(Decycle);
+            _decycleInverseFisher.Add(DecycleInverseFisher);
+            _smoothedSeries.Add(SmoothedSeries);
+            _PSAR.Add(PSAR);
+            _flag.Add(Flag);
+            _actualOrder.Add(ActualOrder);
         }
     }
 }
