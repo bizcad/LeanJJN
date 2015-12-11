@@ -20,7 +20,6 @@
     //"algorithm-type-name": "QCLive",
     //"algorithm-type-name": "MultiSigDailyAlgorithm",
     //"algorithm-type-name": "MultiSignalConsolidatorAlgorithm",
-    "algorithm-type-name": "MultiSignalAlgorithmQC",
     //"algorithm-type-name": "InstantaneousTrendAlgorithmQC",
     //"algorithm-type-name": "ITrendAlgorithmJJ",
     //"algorithm-type-name": "MultiSignalAlgorithm",
@@ -28,7 +27,7 @@
     //"algorithm-type-name": "MultiSignalAlgorithmTicketQueue2",
     //"algorithm-type-name": "Test2Algorithm",
     //"algorithm-type-name": "MultisymbolAlgorithm",
-    //"algorithm-type-name": "VixWvfAlgorithm",
+    "algorithm-type-name": "VixWvfAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java

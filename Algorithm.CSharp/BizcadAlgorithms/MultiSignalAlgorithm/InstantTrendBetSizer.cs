@@ -33,7 +33,9 @@ namespace QuantConnect.Algorithm.CSharp
 
         public decimal BetSize(Symbol symbol, decimal currentPrice, decimal transactionSize, SignalInfo signalInfo)
         {
-            decimal betsize = _algorithm.Portfolio[symbol].Invested ? Math.Abs(_algorithm.Portfolio[symbol].Quantity) : Math.Abs(transactionSize / currentPrice);
+            decimal betsize = _algorithm.Portfolio[symbol].Invested
+                ? Math.Abs(_algorithm.Portfolio[symbol].Quantity)
+                : Math.Abs((15m / 26m) * _algorithm.Portfolio.Cash / currentPrice);
             if (betsize <= 10)
                 betsize = 100;
             return betsize;

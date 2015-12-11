@@ -52,7 +52,7 @@ namespace QuantConnect.Algorithm
         public void FromInt32(int input)
         {
             Int32 x = input;
-            bool y = false;
+            
            
             PropertyInfo[] properties = GetType().GetProperties();
             for (int i = properties.Length - 1; i >= 0; i--)
