@@ -36,9 +36,6 @@ namespace QuantConnect.Algorithm.CSharp
 
         public void ProcessTransaction(OrderTransaction trans)
         {
-            string comment;
-            if (trans.OrderId == 8)
-                comment = "";
             IPositionInventory openPosition = OpenPositions.FirstOrDefault(p => p.GetSymbol() == trans.Symbol);
             if (openPosition == null)
             {

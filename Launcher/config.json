@@ -10,7 +10,27 @@
 
     // algorithm class selector
     //"algorithm-type-name": "BasicTemplateAlgorithm",
-    "algorithm-type-name": "LittleWingPlusMSA",
+    //"algorithm-type-name": "LoggingITrendAlgorithm",
+    //"algorithm-type-name": "InstantTrendAlgorithmOriginal",
+    //"algorithm-type-name": "InstantaneousTrendAlgorithm",
+    //"algorithm-type-name": "ITrendAlgorithm",
+    //"algorithm-type-name": "ITrendAlgorithmNickVariation",
+    //"algorithm-type-name": "SigTestAlgorithm",
+    //"algorithm-type-name": "RollingWindowTestAlgorithm",
+    //"algorithm-type-name": "QCLive",
+    //"algorithm-type-name": "MultiSigDailyAlgorithm",
+    //"algorithm-type-name": "MultiSignalConsolidatorAlgorithm",
+    //"algorithm-type-name": "InstantaneousTrendAlgorithmQC",
+    //"algorithm-type-name": "ITrendAlgorithmJJ",
+    //"algorithm-type-name": "MultiSignalAlgorithm",
+    //"algorithm-type-name": "MultiSignalAlgorithmQC",
+    //"algorithm-type-name": "MultiSignalAlgorithmTicketQueue2",
+    //"algorithm-type-name": "Test2Algorithm",
+    //"algorithm-type-name": "MultisymbolAlgorithm",
+    "algorithm-type-name": "VixWvfAlgorithm",
+    //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
+    
+    
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
     "algorithm-language": "CSharp",
@@ -24,6 +44,7 @@
 
     // engine
     //"data-folder": "../../../Data/",
+    //"data-folder": "H:\\GoogleFinanceData\\"
     "data-folder": "C:\\Users\\JJ\\Dropbox\\JJ\\data\\",
 
     // handlers
