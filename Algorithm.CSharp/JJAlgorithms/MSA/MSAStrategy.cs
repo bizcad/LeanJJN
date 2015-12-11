@@ -32,6 +32,9 @@ namespace QuantConnect.Algorithm.CSharp
         // The minimum change needed in order to consider a run.
         private decimal _minRunThreshold;
 
+        // If this flag is true, all the indicator will be reseted each new day.
+        private bool _dailyIndicatorReset;
+
         // Today upward and downward runs
         private List<decimal> _todayRuns;
 
@@ -67,17 +70,20 @@ namespace QuantConnect.Algorithm.CSharp
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="MSAStrategy"/> class.
+        /// Initializes a new instance of the <see cref="MSAStrategy" /> class.
         /// </summary>
         /// <param name="smoothedSeries">The smoothed series.</param>
         /// <param name="previousDaysN">How many daily means will be used to estimate the thresholds.</param>
         /// <param name="runsPerDay">How many runs will be used to estimate the daily mean.</param>
-        public MSAStrategy(IndicatorBase<IndicatorDataPoint> smoothedSeries, int previousDaysN = 3, int runsPerDay = 5, decimal minRunThreshold = 0.0001m)
+        /// <param name="minRunThreshold">The minimum run threshold.</param>
+        /// <param name="DailyIndicatorReset">if set to <c>true</c> [daily indicator reset].</param>
+        public MSAStrategy(IndicatorBase<IndicatorDataPoint> smoothedSeries, int previousDaysN = 3, int runsPerDay = 5, decimal minRunThreshold = 0.0001m, bool DailyIndicatorReset = true)
         {
             _runsPerDay = runsPerDay;
             _actualRun = 1m;
             _turnAround = false;
             _minRunThreshold = minRunThreshold;
+            _dailyIndicatorReset = DailyIndicatorReset;
 
             _smoothedSeries = smoothedSeries;
             _smoothedSeriesROC = new RateOfChange(1).Of(_smoothedSeries);
@@ -247,12 +253,15 @@ namespace QuantConnect.Algorithm.CSharp
 
             _turnAround = false;
 
-            // Reset the indicators.
-            _smoothedSeries.Reset();
-            _smoothedSeriesROC.Reset();
-            _SSROCRW.Reset();
-
             ActualSignal = OrderSignal.doNothing;
+
+            // Reset the indicators.
+            if (_dailyIndicatorReset)
+            {
+                _smoothedSeries.Reset();
+                _smoothedSeriesROC.Reset();
+                _SSROCRW.Reset();
+            }
         }
     }
 }

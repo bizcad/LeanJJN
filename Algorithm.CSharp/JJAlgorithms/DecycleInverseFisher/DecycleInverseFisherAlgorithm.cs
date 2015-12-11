@@ -1,16 +1,14 @@
 ﻿using QuantConnect.Data.Market;
 using QuantConnect.Indicators;
 using QuantConnect.Orders;
-using QuantConnect.Packets;
+using Newtonsoft.Json;
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
-
-using Newtonsoft.Json;
-
 
 namespace QuantConnect.Algorithm.CSharp
 {
@@ -34,7 +32,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         #region Fields
 
-        /* 
+        /*
      * +-------------------------------------------------+
      * |Algorithm Control Panel                          |
      * +-------------------------------------------------+*/
@@ -200,13 +198,11 @@ namespace QuantConnect.Algorithm.CSharp
                 #region Logging stuff - Filling the data StockLogging
 
                 //Time,Close,Decycle,InvFisher,LightSmoothPrice,Momersion,PSAR,Position
-                string newLine = string.Format("{0},{1},{2},{3},{4},{5},{6},{7}",
+                string newLine = string.Format("{0},{1},{2},{3},{4},{5}",
                                                Time.ToString("u"),
                                                data[symbol].Close,
                                                Strategy[symbol].DecycleTrend.Current.Value,
                                                Strategy[symbol].InverseFisher.Current.Value,
-                                               Strategy[symbol].LightSmoothPrice.Current.Value,
-                                               Strategy[symbol].Momersion.Current.Value,
                                                PSARDict[symbol].Current.Value,
                                                Portfolio[symbol].Invested ? Portfolio[symbol].IsLong ? 1 : -1 : 0
                                                );
@@ -269,27 +265,49 @@ namespace QuantConnect.Algorithm.CSharp
             int i = 0;
             string filename;
             string filePath;
-                        
+
+
+            var closedTrades = JsonConvert.SerializeObject(TradeBuilder.ClosedTrades);
+            File.WriteAllText("LittleWing_closedTrades.json", closedTrades);
+
+            var transactions = JsonConvert.SerializeObject(Transactions.GetOrders(o => true));
+            File.WriteAllText("LittleWing_transactions.json", transactions);
+
+            // Generate a CSV with the symbol, direction, open and close time for each closed trade. Useful for plotting.
+            StringBuilder closedTradesLog = new StringBuilder();
+            closedTradesLog.AppendLine("Symbol,Direction,EntryTime,ExitTime");
+            foreach (var trade in TradeBuilder.ClosedTrades)
+            {
+                closedTradesLog.AppendLine(string.Format("{0},{1},{2},{3}",
+                                                         trade.Symbol,
+                                                         Enum.GetName(typeof(OrderDirection), trade.Direction),
+                                                         trade.EntryTime.ToString("u"),
+                                                         trade.ExitTime.ToString("u")
+                                                         ));
+            }
+
             foreach (string symbol in Symbols)
             {
                 filename = string.Format("LW_price_{0}.csv", symbol);
                 filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
                 if (File.Exists(filePath)) File.Delete(filePath);
                 File.AppendAllText(filePath, stockLogging[i].ToString());
                 Debug(string.Format("\nSymbol Name: {0}, Ending Value: {1} ", symbol, Portfolio[symbol].Profit));
                 i++;
             }
 
+            filename = string.Format("LittleWing_closedTrades.csv");
+            filePath = AssemblyLocator.ExecutingDirectory() + filename;
+            if (File.Exists(filePath)) File.Delete(filePath);
+            File.AppendAllText(filePath, closedTradesLog.ToString());
+
             filename = string.Format("LittleWing_transactions.csv");
             filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
             if (File.Exists(filePath)) File.Delete(filePath);
             File.AppendAllText(filePath, transactionLogging.ToString());
 
             filename = string.Format("LittleWing_dailyReturns.csv");
             filePath = AssemblyLocator.ExecutingDirectory() + filename;
-
             if (File.Exists(filePath)) File.Delete(filePath);
             File.AppendAllText(filePath, dailyProfitsLogging.ToString());
 
@@ -310,7 +328,8 @@ namespace QuantConnect.Algorithm.CSharp
         {
             OrderSignal actualOrder = OrderSignal.doNothing;
 
-            if (Strategy[symbol].Momersion > 50)
+            // if (Strategy[symbol].Momersion > 50)
+            if (false) 
             {
                 if ((PSARDict[symbol] > Securities[symbol].Price) &&
                    (Strategy[symbol].InverseFisher < -Threshold))
@@ -479,7 +498,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             foreach (string symbol in Symbols)
             {
-                Strategy[symbol].Momersion.Reset();
+                //Strategy[symbol].Momersion.Reset();
                 PSARDict[symbol].Reset();
                 if (resetAtEndOfDay) Strategy[symbol].Reset();
 

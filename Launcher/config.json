@@ -29,6 +29,8 @@
     //"algorithm-type-name": "MultisymbolAlgorithm",
     "algorithm-type-name": "VixWvfAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
+    
+    
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
     "algorithm-language": "CSharp",
@@ -42,8 +44,8 @@
 
     // engine
     //"data-folder": "../../../Data/",
-    "data-folder": "H:\\GoogleFinanceData\\",
-    "data-directory": "H:\\GoogleFinanceData\\",
+    //"data-folder": "H:\\GoogleFinanceData\\"
+    "data-folder": "C:\\Users\\JJ\\Dropbox\\JJ\\data\\",
 
     // handlers
     "log-handler": "QuantConnect.Logging.CompositeLogHandler",
