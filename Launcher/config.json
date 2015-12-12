@@ -29,8 +29,9 @@
     //"algorithm-type-name": "MultisymbolAlgorithm",
     "algorithm-type-name": "VixWvfAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
-    
-    
+    //"algorithm-type-name": "TestingIchimoku",
+
+
 
     // Algorithm language selector - options CSharp, FSharp, VisualBasic, Python, Java
     "algorithm-language": "CSharp",

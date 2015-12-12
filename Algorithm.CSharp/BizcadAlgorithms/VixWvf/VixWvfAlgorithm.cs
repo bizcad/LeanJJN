@@ -32,7 +32,7 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
         private bool noOvernight = true; // Close all positions before market close.
         /* +-------------------------------------------------+*/
 
-        private string[] symbolarray = { "SPY", "VIX"};
+        private string[] symbolarray = { "SPY", "AAPL"};
         private List<string> Symbols = new List<string>();
         WilliamsVixFixIndicator wvfh = new WilliamsVixFixIndicator(Period);
         WilliamsVixFixIndicatorReverse wvfl = new WilliamsVixFixIndicatorReverse(Period);
@@ -94,23 +94,13 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
             SubscriptionManager.AddConsolidator(Portfolio.Securities[symbolarray[0]].Symbol, Consolidator60Minute);
 
             // Register the Ichimoku indicators, which also adds the Consolidator base class OnDataConsolidated
-            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi, new TimeSpan(0, 1, 0));
-            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi5, new TimeSpan(0, 5, 0));
-            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi10, new TimeSpan(0, 10, 0));
-            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi30, new TimeSpan(0, 30, 0));
-            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi60, new TimeSpan(0, 60, 0));
+            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi, Resolution.Minute);
+            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi5, TimeSpan.FromMinutes(5));
+            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi10, TimeSpan.FromMinutes(10));
+            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi30, TimeSpan.FromMinutes(30));
+            RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi60, TimeSpan.FromMinutes(60));
 
-            // ??? Do I need to consolidate the history?
-            var history = History(symbolarray[0], 3601);
-            foreach (TradeBar bar in history)
-            {
-                ichi.Update(bar);
-                ichi5.Update(bar);
-                ichi10.Update(bar);
-                ichi30.Update(bar);
-                ichi60.Update(bar);
-            }
-
+            SetWarmup(390 * 5);
         }
 
         private void On5Minute(object sender, TradeBar e)
@@ -146,7 +136,7 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
 
         private void OnDataForSymbol(KeyValuePair<Symbol, TradeBar> data)
         {
-            if (data.Key == "VIX")
+            if (data.Key == "AAPL")
             {
                 vix = data.Value;
             }
