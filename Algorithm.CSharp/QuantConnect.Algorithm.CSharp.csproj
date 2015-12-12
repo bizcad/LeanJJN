@@ -108,6 +108,7 @@
     <Compile Include="JJAlgorithms\TestingAlgos\NaiveStrategy.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingAP.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingEOD.cs" />
+    <Compile Include="JJAlgorithms\TestingAlgos\TestingIchimoku.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingInjectionAlgo.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingLSMA.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingPSAR.cs" />
