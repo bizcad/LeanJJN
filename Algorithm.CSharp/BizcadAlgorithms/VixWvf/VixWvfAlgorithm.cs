@@ -44,10 +44,7 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
         IchimokuKinkoHyo ichi30 = new IchimokuKinkoHyo("Ichi30");
         IchimokuKinkoHyo ichi60 = new IchimokuKinkoHyo("Ichi60");
         InstantaneousTrend iTrend = new InstantaneousTrend(22);
-        private TradeBarConsolidator Consolidator5Minute = new TradeBarConsolidator(TimeSpan.FromMinutes(5));
-        private TradeBarConsolidator Consolidator10Minute = new TradeBarConsolidator(TimeSpan.FromMinutes(10));
-        private TradeBarConsolidator Consolidator30Minute = new TradeBarConsolidator(TimeSpan.FromMinutes(30));
-        private TradeBarConsolidator Consolidator60Minute = new TradeBarConsolidator(TimeSpan.FromMinutes(60));
+
 
         private List<string> IchimokuLog = new List<string>(); 
 
@@ -74,25 +71,7 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
             {
                 AddSecurity(SecurityType.Equity, symbol, Resolution.Minute);
             }
-            //foreach (Symbol s in Portfolio.Keys)
-            //{
-            //    var priceIdentity = Identity(s, selector: Field.Close);
-            //}
-
-            // Add the event handler for OnDataConsolidated so this algorithm gets an event
-            Consolidator5Minute.DataConsolidated += On5Minute;
-            Consolidator10Minute.DataConsolidated += On10Minute;
-            Consolidator30Minute.DataConsolidated += On30Minute;
-            Consolidator60Minute.DataConsolidated += On60Minute;
-
-            // Add the Consolidator to the SubscriptionManager so OnDataConsolidated fires the above
-            //    events each time the consolidator consolidates.  This event is our hook into the 
-            //    Consolidator and we get a consolidated TradeBar as the TradeBar e.
-            SubscriptionManager.AddConsolidator(Portfolio.Securities[symbolarray[0]].Symbol, Consolidator5Minute);
-            SubscriptionManager.AddConsolidator(Portfolio.Securities[symbolarray[0]].Symbol, Consolidator10Minute);
-            SubscriptionManager.AddConsolidator(Portfolio.Securities[symbolarray[0]].Symbol, Consolidator30Minute);
-            SubscriptionManager.AddConsolidator(Portfolio.Securities[symbolarray[0]].Symbol, Consolidator60Minute);
-
+            
             // Register the Ichimoku indicators, which also adds the Consolidator base class OnDataConsolidated
             RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi, Resolution.Minute);
             RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi5, TimeSpan.FromMinutes(5));
@@ -103,20 +82,6 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
             SetWarmup(390 * 5);
         }
 
-        private void On5Minute(object sender, TradeBar e)
-        {
-        }
- 
-        private void On10Minute(object sender, TradeBar e)
-        {
-        }
-
-        private void On30Minute(object sender, TradeBar e)
-        {
-        }
-        private void On60Minute(object sender, TradeBar e)
-        {
-        }
         #region "one minute events"
         /// <summary>
         /// OnData event is the primary entry point for your algorithm. Each new data point will be pumped in here.
