@@ -12,6 +12,6 @@
         int GetSellsQuantity(Symbol symbol);
         Symbol GetSymbol();
 
-        Symbol Symbol { get; set; }
+        string Symbol { get; set; }
     }
 }

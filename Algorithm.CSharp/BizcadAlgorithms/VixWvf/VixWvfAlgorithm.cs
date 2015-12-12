@@ -100,15 +100,20 @@ namespace QuantConnect.Algorithm.CSharp.BizcadAlgorithm.VixWvf
             RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi30, new TimeSpan(0, 30, 0));
             RegisterIndicator(Portfolio.Securities[symbolarray[0]].Symbol, ichi60, new TimeSpan(0, 60, 0));
 
-            // ??? Do I need to consolidate the history?
-            var history = History(symbolarray[0], 3601);
+            // consolidate the history?
+            var history = History(Portfolio.Securities[symbolarray[0]].Symbol, 3601);
             foreach (TradeBar bar in history)
             {
                 ichi.Update(bar);
-                ichi5.Update(bar);
-                ichi10.Update(bar);
-                ichi30.Update(bar);
-                ichi60.Update(bar);
+                Consolidator5Minute.Update(bar);
+                Consolidator10Minute.Update(bar);
+                Consolidator30Minute.Update(bar);
+                Consolidator60Minute.Update(bar);
+
+                //ichi5.Update(bar);
+                //ichi10.Update(bar);
+                //ichi30.Update(bar);
+                //ichi60.Update(bar);
             }
 
         }

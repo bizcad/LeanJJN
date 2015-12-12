@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 
 using System.Linq;
+using System.Net;
 using System.Text;
 using QuantConnect.Data.Market;
 using QuantConnect.Indicators;
@@ -19,8 +20,8 @@ namespace QuantConnect.Algorithm.CSharp
         DateTime startTime = DateTime.Now;
         //private DateTime _startDate = new DateTime(2015, 8, 10);
         //private DateTime _endDate = new DateTime(2015, 8, 14);
-        private DateTime _startDate = new DateTime(2015, 10, 19);
-        private DateTime _endDate = new DateTime(2015, 10, 20);
+        private DateTime _startDate = new DateTime(2015, 5, 19);
+        private DateTime _endDate = new DateTime(2015, 12, 10);
         private decimal _portfolioAmount = 26000;
         private decimal _transactionSize = 15000;
         //+----------------------------------------------------------------------------------------+
@@ -34,6 +35,8 @@ namespace QuantConnect.Algorithm.CSharp
         // +---------------------------------------------------------------------------------------+
 
         private List<Symbol> Symbols;
+        //        private Symbol symbol;
+
         private int barcount = 0;
 
         #region lists
@@ -43,12 +46,13 @@ namespace QuantConnect.Algorithm.CSharp
         #region "logging P&L"
         // *****************  P & L ************/
         //private ILogHandler mylog;
-        //private string ondataheader = @"Time,BarCount,Volume, Open,High,Low,Close,EndTime,Period,DataType,IsFillForward,Time,Symbol,Price,,,Time,Price,Trend, Trigger, orderSignal, Comment,, EntryPrice, Exit Price,Unrealized,Order Id, Owned, TradeNet, Portfolio";
+        //        private string ondataheader =
+        //            @"Time,BarCount,Volume, Open,High,Low,Close,EndTime,Period,DataType,IsFillForward,Time,Symbol,Price,,,Time,Price,Trend, Trigger, orderSignal, Comment,, EntryPrice, Exit Price,Unrealized,Order Id, Owned, TradeNet, Portfolio";
 
         private DateTime tradingDate;
         private decimal totalProfit = 0;
-        //private decimal tradeprofit = 0m;
-        //private decimal tradefees = 0m;
+        //        private decimal tradeprofit = 0m;
+        //        private decimal tradefees = 0m;
         private decimal tradenet = 0m;        // *****************  P & L ************/
         #endregion
         private List<OrderTransaction> _transactions;
@@ -78,9 +82,8 @@ namespace QuantConnect.Algorithm.CSharp
 
 
 
-            AddData<TradeBar>("AAPL");
-            string symbolstring = "AAPL";
-           
+            string symbolstring = "NFLX";
+
             #region logging
             //mylog = Composer.Instance.GetExportedValueByTypeName<ILogHandler>("CustomFileLogHandler");
             //var algoname = this.GetType().Name;
@@ -91,8 +94,8 @@ namespace QuantConnect.Algorithm.CSharp
             Symbols = new List<Symbol>();
             //Add as many securities as you like. All the data will be passed into the event handler:
             int id = 0;
-                
-            AddSecurity(SecurityType.Equity, symbolstring);
+
+            AddSecurity(SecurityType.Equity, symbolstring, Resolution.Minute);
             var keys = Securities.Keys;
             foreach (Symbol s in Securities.Keys)
             {
@@ -183,7 +186,7 @@ namespace QuantConnect.Algorithm.CSharp
                 }
             }
             var sharesOwned = Portfolio[data.Key].Quantity;
-            
+
             #region "logging"
 
             string logmsg =
@@ -231,16 +234,38 @@ namespace QuantConnect.Algorithm.CSharp
                     "",
                     ""
                     );
+            SendMessage(typeof (Message), logmsg);
+            //Message message = new Message();
+            //message.Id = 1;
+            //message.Contents = logmsg;
+            //string jsonmessage = Newtonsoft.Json.JsonConvert.SerializeObject(message);
+            //WebClient client = new WebClient();
+            //client.Encoding = System.Text.Encoding.UTF8;
+            //client.Headers.Add("Content-Type", "application/json");
+
+            //string reply = client.UploadString("http://localhost:64253/api/Messages/", jsonmessage);
             //mylog.Debug(logmsg);
             #endregion
             //tradeprofit = 0;
             //tradefees = 0;
-            tradenet = 0;
+            //tradenet = 0;
             // At the end of day, reset the trend and trendHistory
             if (time.Hour == 16)
             {
                 barcount = 0;
             }
+        }
+        private void SendMessage(Type type, string logmsg)
+        {
+            Message message = new Message();
+            message.Id = 0;
+            message.Contents = logmsg;
+            string jsonmessage = Newtonsoft.Json.JsonConvert.SerializeObject(message);
+            WebClient client = new WebClient();
+            client.Encoding = System.Text.Encoding.UTF8;
+            client.Headers.Add("Content-Type", "application/json");
+
+            string reply = client.UploadString("http://localhost:64253/api/Messages/", jsonmessage);
         }
 
         private void HandlePartiallyFilled(KeyValuePair<Symbol, TradeBar> data, SignalInfo currentSignalInfo)
@@ -260,7 +285,7 @@ namespace QuantConnect.Algorithm.CSharp
                     else // short
                     {
                         AlterShortLimit(data, liveticket, currentSignalInfo);
-                    }                    
+                    }
                 }
             }
         }
@@ -336,7 +361,7 @@ namespace QuantConnect.Algorithm.CSharp
             {
                 liveticket.Cancel();
                 Log(string.Format("Order {0} cancellation sent. Trade attempts > 3.", liveticket.OrderId));
-                
+
             }
 
             //if (newLimit < data.Value.Low)
@@ -600,7 +625,7 @@ namespace QuantConnect.Algorithm.CSharp
         public decimal PositionShares(Symbol symbol, SignalInfo signalInfo)
         {
             decimal quantity = 0;
-            //int operationQuantity;
+            //            int operationQuantity;
             decimal targetSize = GetBetSize(symbol, signalInfo);
 
             switch (signalInfo.Value)
@@ -686,7 +711,7 @@ namespace QuantConnect.Algorithm.CSharp
 
 
                 var tradesAsCsv = CsvSerializer.Serialize<MatchedTrade>(",",
-                    _orderTransactionProcessor.Trades.Where(f => f.DateAcquired == tradingDate), true);
+                    _orderTransactionProcessor.Trades, true);
                 var tradecount = _orderTransactionProcessor.Trades.Count();
 
                 sb = new StringBuilder();
@@ -729,7 +754,7 @@ namespace QuantConnect.Algorithm.CSharp
             Log(debugstring);
             #region logging
 
-            NotifyUser();
+            //NotifyUser();
             #endregion
         }
 

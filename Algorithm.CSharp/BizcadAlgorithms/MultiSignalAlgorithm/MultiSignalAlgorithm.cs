@@ -35,7 +35,7 @@ namespace QuantConnect.Algorithm.CSharp
         //+----------------------------------------------------------------------------------------+
         //  Algorithm Control Panel                         
         // +---------------------------------------------------------------------------------------+
-        private static int ITrendPeriod = 22;            // Instantaneous Trend period.
+        //private static int ITrendPeriod = 22;            // Instantaneous Trend period.
         //private static decimal Tolerance = 0.000m;      // Trigger - Trend crossing tolerance.
         //private static decimal RevertPCT = 1.0015m;     // Percentage tolerance before revert position.
 
@@ -73,21 +73,21 @@ namespace QuantConnect.Algorithm.CSharp
         private decimal tradeprofit = 0m;
         private decimal tradefees = 0m;
         private decimal tradenet = 0m;
-        private decimal lasttradefees = 0;
+        //private decimal lasttradefees = 0;
         //decimal profit = 0m;
         //decimal fees = 0m;
         //private decimal netprofit = 0;
         private decimal dayprofit = 0;
         private decimal dayfees = 0;
         private decimal daynet = 0;
-        private decimal lastprofit = 0;
-        private decimal lastfees = 0;
+        //private decimal lastprofit = 0;
+        //private decimal lastfees = 0;
         private decimal totalProfit = 0;
 
         private int lasttradecount;
         private DateTime tradingDate;
         //private decimal nExitPrice = 0;
-        private OrderStatus tradeResult;
+        //private OrderStatus tradeResult;
 
 
         #endregion
@@ -102,7 +102,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         private SigC _scig5C = new SigC();
 
-        private string json;
+        //private string json;
 
 
         //private string dailyheader = @"Trading Date,Daily Profit, Portfolio Value";
@@ -655,16 +655,14 @@ namespace QuantConnect.Algorithm.CSharp
 
         private void SendMessage(Type type, string message)
         {
-            QCMessage msg = new QCMessage();
-            msg.TypeName = type.Name;
+            Message msg = new Message();
+            msg.Id = 1;
             msg.Contents = message;
-            msg.TimeSent = DateTime.Now;
-            msg.TimeRecv = DateTime.Now;
 
             var request = new HttpRequestMessage();
             request.Method = HttpMethod.Post;
             string _apiHost = @"http://localhost:63144/";
-            string uriStem = @"api/QCMessage";
+            string uriStem = @"api/Message";
 
             request.RequestUri = new Uri(String.Format("{0}{1}", _apiHost, uriStem));
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -693,24 +691,7 @@ namespace QuantConnect.Algorithm.CSharp
                         //    Console.WriteLine(result.Substring(0, 50) + "...");
                         //}
                     }
-
                 }
-
-                //var uri = new Uri(@"http://localhost:63144/");
-                //client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                //client.BaseAddress = uri;
-                //HttpResponseMessage q = client.GetAsync("api/GetQCMessage/1").Result;
-                //if (!q.IsSuccessStatusCode)
-                //{
-                //    string r = "Error Code" + q.StatusCode + " : Message - " + q.ReasonPhrase;
-                //    Log(r);
-                //}
-                //HttpResponseMessage response = client.PostAsJsonAsync("api/Message", msg).Result;
-                //if (!response.IsSuccessStatusCode)
-                //{
-                //    string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-                //    Log(r);
-                //}
             }
             
         }
@@ -1035,7 +1016,7 @@ namespace QuantConnect.Algorithm.CSharp
                     SendTransactionsToFile(data.Key + "transactions.csv");
                     #endregion
 
-                    NotifyUser();
+                    //NotifyUser();
                 }
                 #endregion
 

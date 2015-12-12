@@ -24,13 +24,13 @@ namespace QuantConnect.Algorithm.CSharp
     {
         #region Algorithm Control Panel
         /*===========| Algorithm Global Variables |===========*/
-        private DateTime _startDate = new DateTime(2015, 07, 01);
-        private DateTime _endDate = new DateTime(2015, 11, 30);
+        private DateTime _startDate = new DateTime(2015, 10, 20);
+        private DateTime _endDate = new DateTime(2015, 12, 10);
         private decimal _portfolioInitialCash = 25000 * 26;
         /// <summary>
         /// The symbols to be used by the strategy.
         /// </summary>
-        private static string[] Symbols = { "AAPL", "ABEV", "BABA", "BAC", "BP" , "C"  , "CSCO", "CVS" , "F"  , "FB",
+        private static string[] Symbols = { "AAPL", "ABEV", "BABA", "BAC", "BP" , "C"  , "CSCO", "CVS" , "FB",
                                             "FOXA", "GE"  , "INTC", "JPM", "KMI", "MFG", "MSFT", "ORCL", "PFE", "SPY",
                                             "T"   , "UTX" ,  "VZ" , "WFC", "WMT", "XOM" };
         /// <summary>
@@ -397,26 +397,26 @@ namespace QuantConnect.Algorithm.CSharp
         private void ExecuteOrder(string symbol, OrderSignal actualOrder)
         {
             int? shares = PositionShares(symbol, actualOrder);
-
-            switch (actualOrder)
+            if (shares.HasValue)
             {
-                case OrderSignal.goLong:
-                case OrderSignal.goShort:
-                    // If the returned shares is null then is the same than doNothing.
-                    if (shares.HasValue)
-                    {
+                switch (actualOrder)
+                {
+                    case OrderSignal.goLong:
+                    case OrderSignal.goShort:
+                        // If the returned shares is null then is the same than doNothing.
+
                         Log("===> Market entry order sent " + symbol);
                         MarketOrder(symbol, shares.Value);
-                    }
-                    break;
 
-                case OrderSignal.closeLong:
-                case OrderSignal.closeShort:
-                    Log("<=== Closing Position " + symbol);
-                    MarketOrder(symbol, shares.Value);
-                    break;
+                        break;
 
-                default: break;
+                    case OrderSignal.closeLong:
+                    case OrderSignal.closeShort:
+                        Log("<=== Closing Position " + symbol);
+                        MarketOrder(symbol, shares.Value);
+                        break;
+
+                }
             }
         }
 

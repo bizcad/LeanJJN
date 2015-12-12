@@ -10,7 +10,7 @@ namespace QuantConnect.Algorithm.CSharp
         public ConcurrentQueue<OrderTransaction> Sells { get; set; }
         public const string Buy = "Buy";
         public const string Sell = "Sell";
-        public Symbol Symbol { get; set; }
+        public string Symbol { get; set; }
 
         public PositionInventoryFifo()
         {
