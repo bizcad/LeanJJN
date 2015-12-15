@@ -139,7 +139,8 @@ namespace QuantConnect.Algorithm.CSharp
             foreach (string symbol in Symbols)
             {
                 AddSecurity(SecurityType.Equity, symbol, Resolution.Minute);
-                Strategy.Add(symbol, new ITrendStrategy(ITrendPeriod, Tolerance, RevertPCT));
+                var priceIdentity = Identity(symbol, selector: Field.Close);
+                Strategy.Add(symbol, new ITrendStrategy(priceIdentity,ITrendPeriod, Tolerance, RevertPCT));
                 Tickets.Add(symbol, new List<OrderTicket>());
                 // Equal portfolio shares for every stock.
                 ShareSize.Add(symbol, (maxLeverage * (1 - leverageBuffer)) / Symbols.Count());

@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Threading;
 using NodaTime;
 using QuantConnect.Data;
+using QuantConnect.Data.Auxiliary;
 using QuantConnect.Data.UniverseSelection;
 using QuantConnect.Interfaces;
 using QuantConnect.Lean.Engine.DataFeeds;
@@ -111,7 +112,7 @@ namespace QuantConnect.Lean.Engine.HistoricalData
                 start, 
                 end, 
                 ResultHandlerStub.Instance,
-                _mapFileProvider.Get(config.Market),
+                config.SecurityType == SecurityType.Equity ? _mapFileProvider.Get(config.Market) : MapFileResolver.Empty,
                 Time.EachTradeableDay(request.ExchangeHours, start, end), 
                 false,
                 includeAuxilliaryData: false
@@ -236,7 +237,7 @@ namespace QuantConnect.Lean.Engine.HistoricalData
             public void LogMessage(string message) { }
             public void ErrorMessage(string error, string stacktrace = "") { }
             public void RuntimeError(string message, string stacktrace = "") { }
-            public void Sample(string chartName, ChartType chartType, string seriesName, SeriesType seriesType, DateTime time, decimal value, string unit = "$") { }
+            public void Sample(string chartName, string seriesName, int seriesIndex, SeriesType seriesType, DateTime time, decimal value, string unit = "$") { }
             public void SampleEquity(DateTime time, decimal value) { }
             public void SamplePerformance(DateTime time, decimal value) { }
             public void SampleBenchmark(DateTime time, decimal value) { }

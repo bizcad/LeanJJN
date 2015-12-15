@@ -6,8 +6,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Net.Http.Headers;
+//using System.Net.Http;
+//using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
@@ -274,7 +274,7 @@ namespace QuantConnect.Algorithm.CSharp
                 data.Value.Close,
                 data.Value.Volume);
 
-            SendMessage(typeof(TradeBar), msg);
+            //SendMessage(typeof(TradeBar), msg);
             barcount++;
             var time = this.Time;
 
@@ -614,117 +614,117 @@ namespace QuantConnect.Algorithm.CSharp
             }
         }
 
-        private string GetQuotes(string symbol)
-        {
-            string ret = string.Empty;
-            try
-            {
-                HttpRequestMessage request = CreateGetRequest(symbol);
-                request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                request.Headers.Add("Authorization", String.Format("Bearer {0}", Config.Get("tradier-access-token")));
+        //private string GetQuotes(string symbol)
+        //{
+        //    string ret = string.Empty;
+        //    try
+        //    {
+        //        HttpRequestMessage request = CreateGetRequest(symbol);
+        //        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //        request.Headers.Add("Authorization", String.Format("Bearer {0}", Config.Get("tradier-access-token")));
 
-                //using (var client = new HttpClient())
-                //{
-                //    HttpResponseMessage response = client.SendAsync(request).Result;
-                //    if (!response.IsSuccessStatusCode)
-                //    {
-                //        string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-                //    }
-                //    ret = response.Content.ReadAsStringAsync().Result;
-                //}
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-            return ret;
-        }
-        private HttpRequestMessage CreateGetRequest(string symbol)
-        {
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Get;
-            string _apiHost = @"https://sandbox.tradier.com/";
-            string uriStem = @"v1/markets/quotes";
-            StringBuilder sb = new StringBuilder();
-            sb.Append("symbols=");
-            sb.Append(symbol);
+        //        //using (var client = new HttpClient())
+        //        //{
+        //        //    HttpResponseMessage response = client.SendAsync(request).Result;
+        //        //    if (!response.IsSuccessStatusCode)
+        //        //    {
+        //        //        string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
+        //        //    }
+        //        //    ret = response.Content.ReadAsStringAsync().Result;
+        //        //}
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //    }
+        //    return ret;
+        //}
+        //private HttpRequestMessage CreateGetRequest(string symbol)
+        //{
+        //    var request = new HttpRequestMessage();
+        //    request.Method = HttpMethod.Get;
+        //    string _apiHost = @"https://sandbox.tradier.com/";
+        //    string uriStem = @"v1/markets/quotes";
+        //    StringBuilder sb = new StringBuilder();
+        //    sb.Append("symbols=");
+        //    sb.Append(symbol);
 
-            request.RequestUri = new Uri(String.Format("{0}{1}?{2}", _apiHost, uriStem, sb.ToString()));
-            return request;
-        }
+        //    request.RequestUri = new Uri(String.Format("{0}{1}?{2}", _apiHost, uriStem, sb.ToString()));
+        //    return request;
+        //}
 
-        private void SendMessage(Type type, string message)
-        {
-            Message msg = new Message();
-            msg.Id = 1;
-            msg.Contents = message;
+        //private void SendMessage(Type type, string message)
+        //{
+        //    Message msg = new Message();
+        //    msg.Id = 1;
+        //    msg.Contents = message;
 
-            var request = new HttpRequestMessage();
-            request.Method = HttpMethod.Post;
-            string _apiHost = @"http://localhost:63144/";
-            string uriStem = @"api/Message";
+        //    var request = new HttpRequestMessage();
+        //    request.Method = HttpMethod.Post;
+        //    string _apiHost = @"http://localhost:63144/";
+        //    string uriStem = @"api/Message";
 
-            request.RequestUri = new Uri(String.Format("{0}{1}", _apiHost, uriStem));
-            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //    request.RequestUri = new Uri(String.Format("{0}{1}", _apiHost, uriStem));
+        //    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-            using (var client = new HttpClient())
-            {
-                HttpResponseMessage response = client.PostAsJsonAsync(request.RequestUri.ToString(), msg).Result;
-                if (!response.IsSuccessStatusCode)
-                {
-                    string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-                    Log(r);
-                }
-                else
-                {
-                    using (HttpContent content = response.Content)
-                    {
-                        // ... Read the string.
-                        string result = content.ReadAsStringAsync().Result;
-                        QCMessage resultMessage = JsonConvert.DeserializeObject<QCMessage>(result);
-                        int id = resultMessage.Id;
+        //    using (var client = new HttpClient())
+        //    {
+        //        HttpResponseMessage response = client.PostAsJsonAsync(request.RequestUri.ToString(), msg).Result;
+        //        if (!response.IsSuccessStatusCode)
+        //        {
+        //            string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
+        //            Log(r);
+        //        }
+        //        else
+        //        {
+        //            using (HttpContent content = response.Content)
+        //            {
+        //                // ... Read the string.
+        //                string result = content.ReadAsStringAsync().Result;
+        //                QCMessage resultMessage = JsonConvert.DeserializeObject<QCMessage>(result);
+        //                int id = resultMessage.Id;
 
-                        // ... Display the result.
-                        //if (result != null &&
-                        //result.Length >= 50)
-                        //{
-                        //    Console.WriteLine(result.Substring(0, 50) + "...");
-                        //}
-                    }
-                }
-            }
+        //                // ... Display the result.
+        //                //if (result != null &&
+        //                //result.Length >= 50)
+        //                //{
+        //                //    Console.WriteLine(result.Substring(0, 50) + "...");
+        //                //}
+        //            }
+        //        }
+        //    }
             
-        }
-        private void SendTransaction(OrderTransaction t)
-        {
-            string j = JsonConvert.SerializeObject(t);
-            try
-            {
-                using (var client = new HttpClient())
-                {
+        //}
+        //private void SendTransaction(OrderTransaction t)
+        //{
+        //    string j = JsonConvert.SerializeObject(t);
+        //    try
+        //    {
+        //        using (var client = new HttpClient())
+        //        {
 
-                    var uri = new Uri(@"http://localhost:55293/");
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.BaseAddress = uri;
+        //            var uri = new Uri(@"http://localhost:55293/");
+        //            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //            client.BaseAddress = uri;
 
-                    //HttpResponseMessage response = client.PostAsJsonAsync("api/OrderTransaction", t).Result;
-                    //if (!response.IsSuccessStatusCode)
-                    //{
-                    //    string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-                    //    Log(r);
-                    //}
-                }
-            }
-            catch (AggregateException aggregateException)
-            {
-                WebSiteAvailable = false;
-                StringBuilder sb = new StringBuilder();
-                sb.AppendLine();
-                SummarizeExceptions(sb, aggregateException);
-                sb.AppendLine(aggregateException.StackTrace);
-                Log(sb.ToString());
-            }
-        }
+        //            //HttpResponseMessage response = client.PostAsJsonAsync("api/OrderTransaction", t).Result;
+        //            //if (!response.IsSuccessStatusCode)
+        //            //{
+        //            //    string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
+        //            //    Log(r);
+        //            //}
+        //        }
+        //    }
+        //    catch (AggregateException aggregateException)
+        //    {
+        //        WebSiteAvailable = false;
+        //        StringBuilder sb = new StringBuilder();
+        //        sb.AppendLine();
+        //        SummarizeExceptions(sb, aggregateException);
+        //        sb.AppendLine(aggregateException.StackTrace);
+        //        Log(sb.ToString());
+        //    }
+        //}
 
         private static void SummarizeExceptions(StringBuilder sb, Exception ex)
         {
@@ -737,28 +737,28 @@ namespace QuantConnect.Algorithm.CSharp
             }
         }
 
-        private void GetTransasctions()
-        {
-            try
-            {
-                using (var client = new HttpClient())
-                {
-                    var uri = new Uri(@"http://localhost:63144/");
-                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                    client.BaseAddress = uri;
+        //private void GetTransasctions()
+        //{
+        //    try
+        //    {
+        //        using (var client = new HttpClient())
+        //        {
+        //            var uri = new Uri(@"http://localhost:63144/");
+        //            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        //            client.BaseAddress = uri;
 
-                    HttpResponseMessage response = client.GetAsync("api/QCMessage/1").Result;
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.Message);
-            }
-        }
+        //            HttpResponseMessage response = client.GetAsync("api/QCMessage/1").Result;
+        //            if (!response.IsSuccessStatusCode)
+        //            {
+        //                string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine(ex.Message);
+        //    }
+        //}
 
         #endregion
 

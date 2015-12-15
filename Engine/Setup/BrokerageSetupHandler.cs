@@ -108,6 +108,29 @@ namespace QuantConnect.Lean.Engine.Setup
         }
 
         /// <summary>
+        /// Creates the brokerage as specified by the job packet
+        /// </summary>
+        /// <param name="algorithmNodePacket">Job packet</param>
+        /// <param name="uninitializedAlgorithm">The algorithm instance before Initialize has been called</param>
+        /// <returns>The brokerage instance, or throws if error creating instance</returns>
+        public IBrokerage CreateBrokerage(AlgorithmNodePacket algorithmNodePacket, IAlgorithm uninitializedAlgorithm)
+        {
+            var liveJob = algorithmNodePacket as LiveNodePacket;
+            if (liveJob == null)
+            {
+                throw new ArgumentException("BrokerageSetupHandler.CreateBrokerage requires a live node packet");
+            }
+
+            // find the correct brokerage factory based on the specified brokerage in the live job packet
+            _factory = Composer.Instance.Single<IBrokerageFactory>(factory => factory.BrokerageType.MatchesTypeName(liveJob.Brokerage));
+
+            // initialize the correct brokerage using the resolved factory
+            var brokerage = _factory.CreateBrokerage(liveJob, uninitializedAlgorithm);
+
+            return brokerage;
+        }
+
+        /// <summary>
         /// Primary entry point to setup a new algorithm
         /// </summary>
         /// <param name="algorithm">Algorithm instance</param>
@@ -117,10 +140,9 @@ namespace QuantConnect.Lean.Engine.Setup
         /// <param name="transactionHandler">The configurated transaction handler</param>
         /// <param name="realTimeHandler">The configured real time handler</param>
         /// <returns>True on successfully setting up the algorithm state, or false on error.</returns>
-        public bool Setup(IAlgorithm algorithm, out IBrokerage brokerage, AlgorithmNodePacket job, IResultHandler resultHandler, ITransactionHandler transactionHandler, IRealTimeHandler realTimeHandler)
+        public bool Setup(IAlgorithm algorithm, IBrokerage brokerage, AlgorithmNodePacket job, IResultHandler resultHandler, ITransactionHandler transactionHandler, IRealTimeHandler realTimeHandler)
         {
             _algorithm = algorithm;
-            brokerage = default(IBrokerage);
 
             // verify we were given the correct job packet type
             var liveJob = job as LiveNodePacket;
@@ -175,7 +197,12 @@ namespace QuantConnect.Lean.Engine.Setup
                                 algorithm.SetAssetLimits(50, 25, 15);
                                 break;
                         }
-
+                        //Set the default brokerage model before initialize
+                        algorithm.SetBrokerageModel(_factory.BrokerageModel);
+                        //Set our default markets
+                        algorithm.SetDefaultMarkets(_factory.DefaultMarkets.ToDictionary());
+                        //Set our parameters
+                        algorithm.SetParameters(job.Parameters);
                         //Algorithm is live, not backtesting:
                         algorithm.SetLiveMode(true);
                         //Initialize the algorithm's starting date
@@ -201,28 +228,9 @@ namespace QuantConnect.Lean.Engine.Setup
                     AddInitializationError("Initialization timed out.");
                     return false;
                 }
-                try
-                {
-                    // find the correct brokerage factory based on the specified brokerage in the live job packet
-                    _factory = Composer.Instance.Single<IBrokerageFactory>(factory => factory.BrokerageType.MatchesTypeName(liveJob.Brokerage));
-                }
-                catch (Exception err)
-                {
-                    Log.Error(err, "Error resolving brokerage factory for " + liveJob.Brokerage+":");
-                    AddInitializationError("Unable to locate factory for brokerage: " + liveJob.Brokerage);
-                }
 
                 // let the world know what we're doing since logging in can take a minute
                 resultHandler.SendStatusUpdate(job.AlgorithmId, AlgorithmStatus.LoggingIn, "Logging into brokerage...");
-
-                // initialize the correct brokerage using the resolved factory
-                brokerage = _factory.CreateBrokerage(liveJob, algorithm);
-
-                if (brokerage == null)
-                {
-                    AddInitializationError("Failed to create instance of brokerage: " + liveJob.Brokerage);
-                    return false;
-                }
 
                 brokerage.Message += brokerageOnMessage;
 
@@ -260,7 +268,7 @@ namespace QuantConnect.Lean.Engine.Setup
                     foreach (var cash in cashBalance)
                     {
                         Log.Trace("BrokerageSetupHandler.Setup(): Setting " + cash.Symbol + " cash to " + cash.Amount);
-                        algorithm.SetCash(cash.Symbol, cash.Amount, cash.ConversionRate);
+                        algorithm.Portfolio.SetCash(cash.Symbol, cash.Amount, cash.ConversionRate);
                     }
                 }
                 catch (Exception err)

@@ -40,12 +40,6 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Net.Http.Formatting, Version=5.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Microsoft.AspNet.WebApi.Client.5.2.3\lib\net45\System.Net.Http.Formatting.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -53,7 +47,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddRemoveSecurityRegressionAlgorithm.cs" />
     <Compile Include="BasicTemplateAlgorithm.cs" />
+    <Compile Include="Benchmarks\EmptyMinute400EquityAlgorithm.cs" />
+    <Compile Include="Benchmarks\Symbols.cs" />
     <Compile Include="BizcadAlgorithms\IBetSizer.cs" />
     <Compile Include="BizcadAlgorithms\Ichimoku\IchimokuAlgorithm.cs" />
     <Compile Include="BizcadAlgorithms\ILimitPriceCalculator.cs" />
@@ -78,12 +75,18 @@
     <Compile Include="BizcadAlgorithms\VixWvf\VixWvfAlgorithm.cs" />
     <Compile Include="BizcadAlgorithms\VixWvf\WilliamsVixFixIndicator.cs" />
     <Compile Include="BizcadAlgorithms\VixWvf\WilliamsVixFixIndicatorReverse.cs" />
+    <Compile Include="CoarseUniverseTop5DollarVolumeAlgorithm.cs" />
     <Compile Include="Common\AssemblyLocator.cs" />
     <Compile Include="Common\CsvSerializer.cs" />
     <Compile Include="Common\Global.cs" />
     <Compile Include="Common\IStrategy.cs" />
     <Compile Include="CustomBenchmarkAlgorithm.cs" />
+    <Compile Include="CustomBrokerageMessageHandlerAlgorithm.cs" />
+    <Compile Include="CustomDataRegressionAlgorithm.cs" />
+    <Compile Include="CustomDataUniverseAlgorithm.cs" />
     <Compile Include="DelistingEventsAlgorithm.cs" />
+    <Compile Include="DropboxBaseDataUniverseSelectionAlgorithm.cs" />
+    <Compile Include="EquitiesLabAlgorithm.cs" />
     <Compile Include="HistoryAlgorithm.cs" />
     <Compile Include="HistoryAndWarmupRegressionAlgorithm.cs" />
     <Compile Include="JJAlgorithms\DecycleInverseFisher\DecycleInverseFisherAlgorithm.cs" />
@@ -92,9 +95,15 @@
     <Compile Include="JJAlgorithms\IntradayBuyLow\BuyLowStrategy.cs" />
     <Compile Include="JJAlgorithms\IntradayBuyLow\IntradayBuyLow1_3.cs" />
     <Compile Include="JJAlgorithms\IntradayBuyLow\WarmUp.cs" />
-    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithm.cs" />
-    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithmOLD.cs" />
-    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendStrategy.cs" />
+    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithm.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithmOLD.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendStrategy.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="JJAlgorithms\Laguerre.cs" />
     <Compile Include="JJAlgorithms\LaguerreBasic.cs" />
     <Compile Include="JJAlgorithms\LaguerreEMA.cs" />
@@ -129,7 +138,9 @@
     <Compile Include="IndicatorSuiteAlgorithm.cs" />
     <Compile Include="LiveFeaturesAlgorithm.cs" />
     <Compile Include="OpeningBreakoutAlgorithm.cs" />
-    <Compile Include="StockPickerAlgorithm.cs" />
+    <Compile Include="DropboxUniverseSelectionAlgorithm.cs" />
+    <Compile Include="ParameterizedAlgorithm.cs" />
+    <Compile Include="UserDefinedUniverseAlgorithm.cs" />
     <Compile Include="WarmupAlgorithm.cs" />
     <Compile Include="WarmupHistoryAlgorithm.cs" />
     <Compile Include="MACDTrendAlgorithm.cs" />
@@ -146,7 +157,7 @@
     <Compile Include="StressSymbolsAlgorithm.cs" />
     <Compile Include="StressSymbols.cs" />
     <Compile Include="TickDataFilteringAlgorithm.cs" />
-    <Compile Include="UniverseSelectionAlgorithm.cs" />
+    <Compile Include="EmaCrossUniverseSelectionAlgorithm.cs" />
     <Compile Include="UniverseSelectionRegressionAlgorithm.cs" />
     <Compile Include="UpdateOrderLiveTestAlgorithm.cs" />
     <Compile Include="UpdateOrderRegressionAlgorithm.cs" />
@@ -162,7 +173,7 @@
       <Name>QuantConnect</Name>
     </ProjectReference>
     <ProjectReference Include="..\Configuration\QuantConnect.Configuration.csproj">
-      <Project>{0AEB4EA3-28C8-476E-89FD-926F06590B4C}</Project>
+      <Project>{0aeb4ea3-28c8-476e-89fd-926f06590b4c}</Project>
       <Name>QuantConnect.Configuration</Name>
     </ProjectReference>
     <ProjectReference Include="..\Indicators\QuantConnect.Indicators.csproj">
@@ -175,10 +186,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
-    </None>
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="BizcadAlgorithms\NewFolder1\" />

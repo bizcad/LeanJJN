@@ -87,12 +87,9 @@
     "trader-lifespan": "",
 
     // oanda configuration
-    "oanda-account-id": "",
+    "oanda-environment": "Practice",
     "oanda-access-token": "",
-    "oanda-refresh-token": "",
-    "oanda-tokens-issued-at": "",
-    "oanda-lifespan": "",
-    "oanda-environment": "sandbox",
+    "oanda-account-id": "",
 
     // fxcm configuration
     "fxcm-server": "",
@@ -100,6 +97,12 @@
     "fxcm-user-name": "",
     "fxcm-password": "",
     "fxcm-account-id": "",
+
+    // parameters to set in the algorithm (the below are just samples)
+    "parameters": {
+        "ema-fast": 10,
+        "ema-slow": 20
+    },
 
     "environments": {
 
