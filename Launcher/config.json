@@ -22,7 +22,7 @@
     //"algorithm-type-name": "MultiSignalConsolidatorAlgorithm",
     //"algorithm-type-name": "InstantaneousTrendAlgorithmQC",
     //"algorithm-type-name": "ITrendAlgorithmJJ",
-    //"algorithm-type-name": "MultiSignalAlgorithm",
+    "algorithm-type-name": "MultiSignalAlgorithm",
     //"algorithm-type-name": "MultiSignalAlgorithmQC",
     //"algorithm-type-name": "MultiSignalAlgorithmTicketQueue2",
     //"algorithm-type-name": "Test2Algorithm",
@@ -30,7 +30,7 @@
     //"algorithm-type-name": "VixWvfAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
     //"algorithm-type-name": "LittleWingPlusMSA",
-    "algorithm-type-name": "TestingIchimoku",
+    //"algorithm-type-name": "TestingIchimoku",
     
     
 

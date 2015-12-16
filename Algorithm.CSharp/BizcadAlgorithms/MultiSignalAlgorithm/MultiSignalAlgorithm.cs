@@ -278,7 +278,7 @@ namespace QuantConnect.Algorithm.CSharp
             barcount++;
             var time = this.Time;
 
-            List<SignalInfo> minuteSignalInfos = new List<SignalInfo>(signalInfos.Where(s => s.Name == data.Key));
+            List<SignalInfo> minuteSignalInfos = new List<SignalInfo>(signalInfos.Where(s => s.Name == data.Key.Value));
             if (minuteSignalInfos.Any())
             {
                 foreach (var signalInfo in minuteSignalInfos)

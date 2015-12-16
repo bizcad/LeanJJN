@@ -474,6 +474,7 @@ namespace QuantConnect.Algorithm.CSharp
             {
                 BarcountLT4 = true;
                 comment = "Barcount < 4";
+                nTrig = trendCurrent.Value;
                 retval = OrderSignal.doNothing;
             }
             else
