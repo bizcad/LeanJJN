@@ -53,6 +53,7 @@
     <Compile Include="CustomIndicators\Decycle.cs" />
     <Compile Include="CustomIndicators\FisherTransform.cs" />
     <Compile Include="CustomIndicators\HighPassFilter.cs" />
+    <Compile Include="CustomIndicators\HistoricalLogReturnsVolatility.cs" />
     <Compile Include="CustomIndicators\HullMovingAverage.cs" />
     <Compile Include="CustomIndicators\InstantaneousTrend.cs" />
     <Compile Include="CustomIndicators\InverseFisherTransform.cs" />
