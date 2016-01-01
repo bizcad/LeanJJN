@@ -18,7 +18,7 @@ namespace QuantConnect
     public partial class TestingLSMA : QCAlgorithm
     {
         #region Fields
-        private static string symbol = "SPY";
+        private static string symbol = "AAPL";
         LeastSquaresMovingAverage LSMA;
         StringBuilder logResult = new StringBuilder();
         #endregion
@@ -26,8 +26,8 @@ namespace QuantConnect
         #region QCAlgorithm Methods
         public override void Initialize()
         {
-            SetStartDate(2010, 01, 1);
-            SetEndDate(2012, 12, 31);
+            SetStartDate(2015, 06, 1);
+            SetEndDate(2015, 06, 30);
 
             SetCash(100000);
 

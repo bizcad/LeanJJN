@@ -1,8 +1,9 @@
-﻿using QuantConnect.Data;
-using QuantConnect.Data.Consolidators;
+﻿using Newtonsoft.Json;
+using QuantConnect.Data;
 using QuantConnect.Indicators;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace QuantConnect.Algorithm.CSharp
@@ -12,19 +13,21 @@ namespace QuantConnect.Algorithm.CSharp
     /// </summary>
     public class TestingIchimoku : QCAlgorithm
     {
-        private string[] ticketsArray = { "AAPL", "BABA" };
+        private bool headingwritten = false;
+        StringBuilder ichimokuLog = new StringBuilder();
 
-        IchimokuKinkoHyo ichi = new IchimokuKinkoHyo("Ichi1");
-        IchimokuKinkoHyo ichi5 = new IchimokuKinkoHyo("Ichi5");
-        IchimokuKinkoHyo ichi10 = new IchimokuKinkoHyo("Ichi10");
-        IchimokuKinkoHyo ichi30 = new IchimokuKinkoHyo("Ichi30");
-        IchimokuKinkoHyo ichi60 = new IchimokuKinkoHyo("Ichi60");
-        int counter = 0;
+        private string[] ticketsArray = { "WMT" };
+
+        private IchimokuKinkoHyo ichi = new IchimokuKinkoHyo("Ichi1");
+        private IchimokuKinkoHyo ichi5 = new IchimokuKinkoHyo("Ichi5");
+        private IchimokuKinkoHyo ichi10 = new IchimokuKinkoHyo("Ichi10");
+        private IchimokuKinkoHyo ichi30 = new IchimokuKinkoHyo("Ichi30");
+        private IchimokuKinkoHyo ichi60 = new IchimokuKinkoHyo("Ichi60");
 
         public override void Initialize()
         {
-            SetStartDate(2015, 6, 01);  //Set Start Date
-            SetEndDate(2015, 6, 5);    //Set End Date
+            SetStartDate(2015, 10, 10);  //Set Start Date
+            SetEndDate(2015, 10, 15);    //Set End Date
             SetCash(100000);             //Set Strategy Cash
 
             foreach (var security in ticketsArray)
@@ -39,9 +42,6 @@ namespace QuantConnect.Algorithm.CSharp
 
                 SetWarmup(390 * 5);
             }
-            
-
-
         }
 
         /// <summary>
@@ -50,49 +50,71 @@ namespace QuantConnect.Algorithm.CSharp
         /// <param name="data">Slice object keyed by symbol containing the stock data</param>
         public override void OnData(Slice data)
         {
-            if (IsWarmingUp)
+            if (!IsWarmingUp)
             {
-                if (ichi.IsReady && counter == 0)
-                {
-                    Log("Warming up");
-                    Log("Ichimoku1 ready!");
-                    counter++;
-                }
-                if (ichi5.IsReady && counter == 1)
-                {
-                    Log("Ichimoku5 ready!");
-                    counter++;
-                }
-                if (ichi10.IsReady && counter == 2)
-                {
-                    Log("Ichimoku10 ready!");
-                    counter++;
-                }
-                if (ichi30.IsReady && counter == 3)
-                {
-                    Log("Ichimoku30 ready!");
-                    counter++;
-                }
-                if (ichi60.IsReady && counter == 4)
-                {
-                    Log("Ichimoku60 ready!");
-                    counter++;
-                }
-            }
-            else
-            {
-                if (counter == 5)
-                {
-                    Log("Warm up ended");
-                    counter++;
-                }
-            }
+                #region Logging stuff
 
+                if (!headingwritten)
+                {
+                    ichimokuLog.Append("Time,Close");
+                    ichimokuLog.Append(",t1");
+                    ichimokuLog.Append(",k1");
+                    ichimokuLog.Append(",sa1");
+                    ichimokuLog.Append(",sb1");
+                    ichimokuLog.Append(",t5");
+                    ichimokuLog.Append(",k5");
+                    ichimokuLog.Append(",sa5");
+                    ichimokuLog.Append(",sb5");
+                    ichimokuLog.Append(",t10");
+                    ichimokuLog.Append(",k10");
+                    ichimokuLog.Append(",sa10");
+                    ichimokuLog.Append(",sb10");
+                    ichimokuLog.Append(",t30");
+                    ichimokuLog.Append(",k30");
+                    ichimokuLog.Append(",sa30");
+                    ichimokuLog.Append(",sb30");
+                    ichimokuLog.Append(",t60");
+                    ichimokuLog.Append(",k60");
+                    ichimokuLog.Append(",sa60");
+                    ichimokuLog.Append(",sb60");
+                    headingwritten = true;
+                }
+                string logmsg =
+                    string.Format(
+                        "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11}," +
+                        "{12},{13},{14},{15},{16},{17},{18},{19},{20},{21}",
+                        Time,
+                        Securities["WMT"].Price,
+                        ichi.Tenkan.Current.Value,
+                        ichi.Kijun.Current.Value,
+                        ichi.SenkouA.Current.Value,
+                        ichi.SenkouB.Current.Value,
+                        ichi5.Tenkan.Current.Value,
+                        ichi5.Kijun.Current.Value,
+                        ichi5.SenkouA.Current.Value,
+                        ichi5.SenkouB.Current.Value,
+                        ichi10.Tenkan.Current.Value,
+                        ichi10.Kijun.Current.Value,
+                        ichi10.SenkouA.Current.Value,
+                        ichi10.SenkouB.Current.Value,
+                        ichi30.Tenkan.Current.Value,
+                        ichi30.Kijun.Current.Value,
+                        ichi30.SenkouA.Current.Value,
+                        ichi30.SenkouB.Current.Value,
+                        ichi60.Tenkan.Current.Value,
+                        ichi60.Kijun.Current.Value,
+                        ichi60.SenkouA.Current.Value,
+                        ichi60.SenkouB.Current.Value
+                        );
+                ichimokuLog.AppendLine(logmsg);
 
+                #endregion Logging stuff
+            }
         }
 
-        public override void OnEndOfDay(string symbol)
+        public override void OnEndOfAlgorithm()
         {
+            File.WriteAllText("IchimokuTesting.csv", ichimokuLog.ToString());
         }
     }
 }

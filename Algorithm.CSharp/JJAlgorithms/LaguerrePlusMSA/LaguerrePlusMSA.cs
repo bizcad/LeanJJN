@@ -23,12 +23,12 @@ namespace QuantConnect.Algorithm.CSharp
     ///     Then execute the order.
     /// - Exits when the LW strategy sends a close orderSignal. This must be improved.
     /// </summary>
-    public class LittleWingPlusMSA : QCAlgorithm
+    public class LaguerrePlusMSA : QCAlgorithm
     {
         #region Algorithm Control Panel
         /*===========| Algorithm Global Variables |===========*/
         private DateTime _startDate = new DateTime(2015, 07, 01);
-        private DateTime _endDate = new DateTime(2015, 11, 30);
+        private DateTime _endDate = new DateTime(2015, 07, 30);
         private decimal _portfolioInitialCash = 25000 * 26;
         /// <summary>
         /// The symbols to be used by the strategy.
@@ -66,12 +66,8 @@ namespace QuantConnect.Algorithm.CSharp
         /// </summary>
         private bool noOvernight = true;
 
-        /*===========| LW Control Panel |===========*/
-        private const int DecyclePeriod = 20;
-        private const int InvFisherPeriod = 360;
-        private const decimal Threshold = 0.9m;
-        private const decimal Tolerance = 0.001m;
-        private bool resetAtEndOfDayLW = false;
+        /*===========| Laguerre Control Panel |===========*/
+        private decimal gamma = 0.8m;
 
         /*===========| MSA Control Panel |===========*/
         private const int SmoothedSeriesPeriod = 30;
@@ -103,17 +99,13 @@ namespace QuantConnect.Algorithm.CSharp
             }
         }
 
-        /*===========| LW Handlers |===========*/
-        // Dictionary used to store the DIFStrategy object for each symbol.
-        private Dictionary<string, DIFStrategy> Triggers = new Dictionary<string, DIFStrategy>();
+        /*===========| Laguerre Handlers |===========*/
+        // Dictionary used to store the LaguerreStrategy object for each symbol.
+        private Dictionary<string, LaguerreStrategy> Triggers = new Dictionary<string, LaguerreStrategy>();
 
         /*===========| MSA Handlers |===========*/
         // Dictionary used to store the MSAStrategy object for each symbol.
         private Dictionary<string, MSAStrategy> Flaggers = new Dictionary<string, MSAStrategy>();
-
-        /*===========| Laguerre Handlers |===========*/
-        // Dictionary used to store the LaguerreIndicator object for each symbol.
-        private Dictionary<string, LaguerreIndicator> Laguerre = new Dictionary<string, LaguerreIndicator>();
 
         /*===========| Trailing Orders Handlers |===========*/
         // TODO: Implement the stoptrailing orders. 
@@ -132,7 +124,7 @@ namespace QuantConnect.Algorithm.CSharp
 
         #endregion
 
-        #region QC Overridden methods
+         #region QC Overridden methods
 
         public override void Initialize()
         {
@@ -158,10 +150,7 @@ namespace QuantConnect.Algorithm.CSharp
                 Flaggers.Add(symbol, new MSAStrategy(smoothedSeries, PreviousDaysN, RunsPerDay, MinimumRunThreshold));
 
                 // Populate the Triggers dictionary with LWStrategy objects.
-                Triggers.Add(symbol, new DIFStrategy(priceIdentity, DecyclePeriod, InvFisherPeriod, Threshold, Tolerance, 0));
-
-                // Populate the Triggers dictionary with LWStrategy objects.
-                Laguerre.Add(symbol, new LaguerreIndicator(0.8m).Of(priceIdentity));
+                Triggers.Add(symbol, new LaguerreStrategy(priceIdentity, gamma));
 
                 // Populate the PSARDict and register the indicators
                 PSARDict.Add(symbol, new ParabolicStopAndReverse(afStart: 0.01m, afIncrement: 0.001m, afMax: 0.2m));
@@ -242,15 +231,15 @@ namespace QuantConnect.Algorithm.CSharp
                 TradeBarSeries.Add(Time,
                                    symbol,
                                    Securities[symbol].Close,
-                                   Triggers[symbol].DecycleTrend,
-                                   Triggers[symbol].InverseFisher,
+                                   0m,
+                                   0m,
                                    Flaggers[symbol].SmoothedSeries,
                                    PSARDict[symbol],
                                    Enum.GetName(typeof(OrderSignal), Flaggers[symbol].ActualSignal),
                                    Enum.GetName(typeof(OrderSignal), actualOrder),
-                                   Laguerre[symbol].Laguerre[0],
-                                   Laguerre[symbol].FIR[0],
-                                   Laguerre[symbol].LaguerreRSI[0]);
+                                   Triggers[symbol].Laguerre.Laguerre[0],
+                                   Triggers[symbol].Laguerre.FIR[0],
+                                   Triggers[symbol].Laguerre.LaguerreRSI[0]);
             }
 
         }
@@ -300,13 +289,13 @@ namespace QuantConnect.Algorithm.CSharp
         {
             // Serialize the and save the JSON files.
             var tradeBars = JsonConvert.SerializeObject(TradeBarSeries);
-            File.WriteAllText("LW_MSA_series.json", tradeBars);
+            File.WriteAllText("Laguerre_MSA_series.json", tradeBars);
 
             var closedTrades = JsonConvert.SerializeObject(TradeBuilder.ClosedTrades);
-            File.WriteAllText("LW_MSA_closedTrades.json", closedTrades);
+            File.WriteAllText("Laguerre_MSA_closedTrades.json", closedTrades);
 
             var transactions = JsonConvert.SerializeObject(Transactions.GetOrders(o => true));
-            File.WriteAllText("LW_MSA_transactions.json", transactions);
+            File.WriteAllText("Laguerre_MSA_transactions.json", transactions);
         }
         # endregion
 
@@ -332,12 +321,13 @@ namespace QuantConnect.Algorithm.CSharp
             // If the Trigger (LW) signal is the same as the last flag...
             if (Triggers[symbol].ActualSignal == OrderFlags[symbol])
             {
+                actualSignal = Triggers[symbol].ActualSignal;
                 // ...and the PSAR indicates we are in the correct side of the trade...
-                if ((OrderFlags[symbol] == OrderSignal.goLong && PSARDict[symbol] < Securities[symbol].Close)
-                    || (OrderFlags[symbol] == OrderSignal.goShort && PSARDict[symbol] > Securities[symbol].Close))
-                {
-                    actualSignal = Triggers[symbol].ActualSignal;
-                }
+                //if ((OrderFlags[symbol] == OrderSignal.goLong && PSARDict[symbol] < Securities[symbol].Close)
+                //    || (OrderFlags[symbol] == OrderSignal.goShort && PSARDict[symbol] > Securities[symbol].Close))
+                //{
+                //    actualSignal = Triggers[symbol].ActualSignal;
+                //}
             }
             // ...then return the Trigger signal to be executed.
             return actualSignal;

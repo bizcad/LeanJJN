@@ -94,9 +94,8 @@
     <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithm.cs" />
     <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendAlgorithmOLD.cs" />
     <Compile Include="JJAlgorithms\ITrendAlgorithm\ITrendStrategy.cs" />
-    <Compile Include="JJAlgorithms\Laguerre.cs" />
-    <Compile Include="JJAlgorithms\LaguerreBasic.cs" />
-    <Compile Include="JJAlgorithms\LaguerreEMA.cs" />
+    <Compile Include="JJAlgorithms\LaguerrePlusMSA\LaguerrePlusMSA.cs" />
+    <Compile Include="JJAlgorithms\LaguerreStrategy\LaguerreStrategy.cs" />
     <Compile Include="JJAlgorithms\LittleWingPlusMSA\LittleWingPlusMSA.cs" />
     <Compile Include="JJAlgorithms\LittleWingPlusMSA\TradeBarRecord.cs" />
     <Compile Include="JJAlgorithms\MMRStrategy\CrossEMAStrategy.cs" />
@@ -104,6 +103,7 @@
     <Compile Include="JJAlgorithms\MMRStrategy\RSIStrategy.cs" />
     <Compile Include="JJAlgorithms\MSA\MSAlgorithm.cs" />
     <Compile Include="JJAlgorithms\MSA\MSAStrategy.cs" />
+    <Compile Include="JJAlgorithms\TestingAlgos\TestingLaguerre.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\NaiveStrategy.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingAP.cs" />
     <Compile Include="JJAlgorithms\TestingAlgos\TestingIchimoku.cs" />

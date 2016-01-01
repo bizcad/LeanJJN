@@ -56,6 +56,9 @@
     <Compile Include="CustomIndicators\HullMovingAverage.cs" />
     <Compile Include="CustomIndicators\InstantaneousTrend.cs" />
     <Compile Include="CustomIndicators\InverseFisherTransform.cs" />
+    <Compile Include="CustomIndicators\LaguerreIndicator.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="CustomIndicators\RelativeVigorIndex.cs" />
     <Compile Include="CustomIndicators\SuperSmoother.cs" />
     <Compile Include="DonchianChannel.cs" />

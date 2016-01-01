@@ -9,8 +9,9 @@
     "environment": "backtesting",
 
     // algorithm class selector
-    //"algorithm-type-name": "BasicTemplateAlgorithm",
-    //"algorithm-type-name": "LoggingITrendAlgorithm",
+    "algorithm-type-name": "LaguerrePlusMSA",
+    //"algorithm-type-name": "LittleWingPlusMSA",
+    //"algorithm-type-name": "TestingLaguerre",
     //"algorithm-type-name": "InstantTrendAlgorithmOriginal",
     //"algorithm-type-name": "InstantaneousTrendAlgorithm",
     //"algorithm-type-name": "ITrendAlgorithm",
@@ -27,7 +28,7 @@
     //"algorithm-type-name": "MultiSignalAlgorithmTicketQueue2",
     //"algorithm-type-name": "Test2Algorithm",
     //"algorithm-type-name": "MultisymbolAlgorithm",
-    "algorithm-type-name": "VixWvfAlgorithm",
+    //"algorithm-type-name": "VixWvfAlgorithm",
     //"algorithm-type-name": "DecycleInverseFisherAlgorithm",
     //"algorithm-type-name": "TestingIchimoku",
 
