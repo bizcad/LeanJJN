@@ -31,7 +31,13 @@ namespace QuantConnect.Lean.Launcher
 
         static void Main(string[] args)
         {
-            Log.LogHandler = Composer.Instance.GetExportedValueByTypeName<ILogHandler>(Config.Get("log-handler", "CompositeLogHandler"));
+            LaunchLean();
+        }
+
+        private static void LaunchLean()
+        {
+            Log.LogHandler =
+                Composer.Instance.GetExportedValueByTypeName<ILogHandler>(Config.Get("log-handler", "CompositeLogHandler"));
 
             //Initialize:
             string mode = "RELEASE";
@@ -46,7 +52,8 @@ namespace QuantConnect.Lean.Launcher
             Thread.CurrentThread.Name = "Algorithm Analysis Thread";
             Log.Trace("Engine.Main(): LEAN ALGORITHMIC TRADING ENGINE v" + Constants.Version + " Mode: " + mode);
             Log.Trace("Engine.Main(): Started " + DateTime.Now.ToShortTimeString());
-            Log.Trace("Engine.Main(): Memory " + OS.ApplicationMemoryUsed + "Mb-App  " + +OS.TotalPhysicalMemoryUsed + "Mb-Used  " + OS.TotalPhysicalMemory + "Mb-Total");
+            Log.Trace("Engine.Main(): Memory " + OS.ApplicationMemoryUsed + "Mb-App  " + +OS.TotalPhysicalMemoryUsed +
+                      "Mb-Used  " + OS.TotalPhysicalMemory + "Mb-Total");
 
             //Import external libraries specific to physical server location (cloud/local)
             LeanEngineSystemHandlers leanEngineSystemHandlers;
@@ -92,13 +99,14 @@ namespace QuantConnect.Lean.Launcher
             Log.Trace("         Transactions: " + leanEngineAlgorithmHandlers.Transactions.GetType().FullName);
             Log.Trace("         History:      " + leanEngineAlgorithmHandlers.HistoryProvider.GetType().FullName);
             Log.Trace("         Commands:     " + leanEngineAlgorithmHandlers.CommandQueue.GetType().FullName);
-            if (job is LiveNodePacket) Log.Trace("         Brokerage:    " + ((LiveNodePacket)job).Brokerage);
+            if (job is LiveNodePacket) Log.Trace("         Brokerage:    " + ((LiveNodePacket) job).Brokerage);
 
             // if the job version doesn't match this instance version then we can't process it
             // we also don't want to reprocess redelivered jobs
             if (job.Version != Constants.Version || job.Redelivered)
             {
-                Log.Error("Engine.Run(): Job Version: " + job.Version + "  Deployed Version: " + Constants.Version + " Redelivered: " + job.Redelivered);
+                Log.Error("Engine.Run(): Job Version: " + job.Version + "  Deployed Version: " + Constants.Version +
+                          " Redelivered: " + job.Redelivered);
                 //Tiny chance there was an uncontrolled collapse of a server, resulting in an old user task circulating.
                 //In this event kill the old algorithm and leave a message so the user can later review.
                 leanEngineSystemHandlers.Api.SetAlgorithmStatus(job.AlgorithmId, AlgorithmStatus.RuntimeError, _collapseMessage);

@@ -26,8 +26,10 @@ namespace QuantConnect.Algorithm.CSharp
 
         #region "Variables"
         DateTime startTime = DateTime.Now;
-        private DateTime _startDate = new DateTime(2015, 8, 11);
-        private DateTime _endDate = new DateTime(2015, 8, 14);
+        private DateTime _startDate = new DateTime(2016, 1, 4);
+        private DateTime _endDate = new DateTime(2016, 1, 8);
+        //private DateTime _startDate = new DateTime(2015, 8, 11);
+        //private DateTime _endDate = new DateTime(2015, 8, 14);
         //private DateTime _startDate = new DateTime(2015, 5, 19);
         //private DateTime _endDate = new DateTime(2015, 11, 3);
         private decimal _portfolioAmount = 26000;
@@ -143,8 +145,15 @@ namespace QuantConnect.Algorithm.CSharp
         /// <seealso cref="QCAlgorithm.SetCash(decimal)"/>
         public override void Initialize()
         {
-            string symbolstring = "AAPL";
+            //string symbolstring = "WYNN";
             Symbols = new List<string>();
+            #region "Read symbols from config"
+            /**********************************************
+             * This section reads a symbol list from Config.json
+             *********************************************/
+            string configsymbols = Config.Get("symbols");
+            Symbols.Add(configsymbols);
+            #endregion
             #region "Read Symbols from File"
             /**********************************************
              THIS SECTION IS FOR READING SYMBOLS FROM A FILE
@@ -201,8 +210,8 @@ namespace QuantConnect.Algorithm.CSharp
 
             //Add as many securities as you like. All the data will be passed into the event handler:
             int id = 0;
-
-            AddSecurity(SecurityType.Equity, symbolstring);
+            foreach (string symbolstring in Symbols)
+                AddSecurity(SecurityType.Equity, symbolstring);
             var keys = Securities.Keys;
 
             foreach (Symbol s in Securities.Keys)
@@ -262,18 +271,6 @@ namespace QuantConnect.Algorithm.CSharp
             #endregion
 
             string m = JsonConvert.SerializeObject(data);
-            
-            string msg = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}",
-                "TradeBar",
-                data.Key,
-                data.Value.EndTime,
-                data.Value.Period,
-                data.Value.Open,
-                data.Value.High,
-                data.Value.Low,
-                data.Value.Close,
-                data.Value.Volume);
-
             //SendMessage(typeof(TradeBar), msg);
             barcount++;
             var time = this.Time;
@@ -1007,7 +1004,7 @@ namespace QuantConnect.Algorithm.CSharp
         {
             if (shouldSellOutAtEod)
             {
-                signal = OrderSignal.doNothing;      // Just in case a signal slipped through in the last minute.
+                //signal = OrderSignal.doNothing;      // Just in case a signal slipped through in the last minute.
                 #region logging
                 if (Time.Hour == 16)
                 {
@@ -1098,7 +1095,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             #region logging
 
-            NotifyUser();
+            //NotifyUser();
 
             //            string filepath = @"I:\MyQuantConnect\Logs\" + symbol + "dailyreturns" + sd + ".csv";
             string filepath = @"I:\MyQuantConnect\Logs\" + symbol + "dailyreturns.csv";

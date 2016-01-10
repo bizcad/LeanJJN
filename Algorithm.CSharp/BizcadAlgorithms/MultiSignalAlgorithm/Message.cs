@@ -15,8 +15,7 @@ namespace QuantConnect.Algorithm.CSharp
         /// <summary>
         /// A message type so it can map to headers and get an instantiation type
         /// </summary>
-        //[ForeignKey("MessageType")]
-        //public int MessageTypeId { get; set; }
+        public string MessageType { get; set; }
         /// <summary>
         /// The contents of the message.
         /// </summary>

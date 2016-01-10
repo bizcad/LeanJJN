@@ -84,6 +84,9 @@ namespace QuantConnect.Indicators.CustomIndicators
             _annualizationMulitplier = customAnnualizerValue;
         }
 
+        /// <summary>
+        /// Also resets the StandardDeviation.  This should be used when there is a dividend or split.
+        /// </summary>
         public override void Reset()
         {
             base.Reset();

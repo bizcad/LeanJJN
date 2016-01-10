@@ -15,6 +15,9 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Mail;
+using System.Security;
 
 namespace QuantConnect.Notifications
 {
@@ -76,6 +79,31 @@ namespace QuantConnect.Notifications
         /// <param name="address">Email address to send to</param>
         public bool Email(string address, string subject, string message, string data = "")
         {
+            MailMessage msg = new MailMessage();
+            msg.From = new MailAddress("admin.nick@bizcad.com");
+            msg.To.Add(new MailAddress(address));
+            msg.Subject = subject;
+            msg.Body = message;
+            SmtpClient client = new SmtpClient();
+            client.Host = "smtp.1and1.com";
+            client.Port = 587;
+            SecureString secure = new SecureString();
+            string pwd = "Wolfst93";
+            for (int i = 0; i < pwd.Length; i++)
+            {
+                secure.AppendChar(pwd[i]);
+            }
+            client.Credentials = new NetworkCredential("admin.nick@bizcad.com", secure);
+            //client.EnableSsl = true;
+            try
+            {
+                client.Send(msg);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
             if (!_liveMode) return false;
             var allow = Allow();
 
