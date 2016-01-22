@@ -32,5 +32,7 @@ namespace QuantConnect.Algorithm.CSharp
         /// Checks the strategy status and updates the ActualSignal property if needed.
         /// </summary>
         public abstract void CheckSignal();
+
+        public int TradeAttempts;
     }
 }

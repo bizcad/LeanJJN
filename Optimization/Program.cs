@@ -68,14 +68,16 @@ namespace Optimization
         /// <param name="algorithmName">A parameter for the Lean Engine.</param>
         /// <param name="startDate"></param>
         /// <param name="endDate"></param>
-        /// <param name="symbol"></param>
+        /// <param name="symbols"></param>
         /// <returns></returns>
-        public decimal Run(string algorithmName, string startDate, string endDate, string symbols)
+        public decimal Run(string algorithmName, string startDate, string endDate, string symbols, decimal size, decimal tolerance)
         {
 
             Config.Set("start-date", startDate);
             Config.Set("end-date", endDate);
             Config.Set("symbols", symbols);
+            Config.Set("size", size.ToString(CultureInfo.InvariantCulture));
+            Config.Set("tolerance", tolerance.ToString(CultureInfo.InvariantCulture));
 
             LaunchLean(algorithmName);
 
@@ -306,83 +308,155 @@ namespace Optimization
             //algos.Add("MultiSignalAlgorithmQC");
             //algos.Add("ITrendAlgorithm");
             //algos.Add("ITrendAlgorithmNickVariation");
-            algos.Add("MultiSignalAlgorithm");
-            //algos.Add("MultiSignalAlgorithmTicketQueue2");
+            //algos.Add("MultiSignalAlgorithm");
+            //algos.Add("MeanReversionAlgorithm");
+            //algos.Add("MultisymbolAlgorithm");
+            algos.Add("TwoBarReversalAlgorithm");
 
             var daysToRun = GenerateDaysToRun();
 
-            string startDate = "20150519";
-            string endDate = "20151106";
+            //string startDate = "20150519";
+            //string endDate = "20151106";
 
             List<string> symbList = new List<string>();
-            using (var sr = new StreamReader(@"H:\GoogleFinanceData\NasdaqTop63.csv"))
-            {
-                while (!sr.EndOfStream)
-                {
-                    string line = sr.ReadLine();
-                    if (!line.Contains("Symbol") && line.Length > 0)
-                    {
-                        var x = line.Split(',');
-                        symbList.Add(x[0]);
-                    }
+            //using (var sr = new StreamReader(@"H:\GoogleFinanceData\NasdaqTop63.csv"))
+            //{
+            //    while (!sr.EndOfStream)
+            //    {
+            //        string line = sr.ReadLine();
+            //        if (!line.Contains("Symbol") && line.Length > 0)
+            //        {
+            //            var x = line.Split(',');
+            //            symbList.Add(x[0]);
+            //        }
 
-                }
-            }
+            //    }
+            //}
+            symbList.Add("TLT");
 
-            RunAlgorithm(algos, daysToRun, symbList);
+            decimal size = .19m;
+            decimal tolerance = .11m;
+            for (size = .1m; size < .4m; size += .01m)
+                for (tolerance = .1m; tolerance < .2m; tolerance += .01m)
+                    RunAlgorithm(algos, daysToRun, symbList, size, tolerance);
         }
+
 
         private static Dictionary<string, DateRange> GenerateDaysToRun()
         {
             Dictionary<string, DateRange> daysToRun = new Dictionary<string, DateRange>();
             List<DayOfWeek> days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-            DateTime sDate = new DateTime(2016, 1, 4);
-            DateTime eDate = new DateTime(2016, 1, 8);
+            DateTime sDate = new DateTime(2015, 5, 19);
+            DateTime eDate = new DateTime(2016, 1, 12);
 
             daysToRun.Add("All", new DateRange(dateToString(sDate), dateToString(eDate)));
 
-            // Do each month
-            // move sDate to first of next month
-            var som = sDate;
-            som = new DateTime(som.Year, som.Month + 1, 1);
+            //AddMonthsToList(sDate, eDate, days, daysToRun);
 
-            var ed = new DateTime(eDate.Year, eDate.Month, 1);
-            while (som < ed)
-            {
-                var eom = new DateTime(som.Year, som.Month + 1, 1);
-                eom = eom.AddDays(-1);  //last day of month
-                while (!days.Contains(eom.DayOfWeek))
-                {
-                    eom = eom.AddDays(-1);
-                }
-                daysToRun.Add("m" + dateToString(som), new DateRange(dateToString(som), dateToString(eom)));
-                som = new DateTime(som.Year, som.Month + 1, 1);
-                while (!days.Contains(som.DayOfWeek))
-                {
-                    som = som.AddDays(1);
-                }
-            }
+            //AddWeeksToList(sDate, eDate, daysToRun);
 
-            som = new DateTime(sDate.Year, sDate.Month + 1, 1);
-            while (som.DayOfWeek != DayOfWeek.Monday)
-                som = som.AddDays(-1);
-            while (som < eDate)
-            {
-                var eow = som.AddDays(4);
-                while (eow.DayOfWeek != DayOfWeek.Friday)
-                {
-                    eow = eow.AddDays(-1);
-                }
-                daysToRun.Add("w" + dateToString(som), new DateRange(dateToString(som), dateToString(eow)));
-
-                som = som.AddDays(8);
-                while (som.DayOfWeek != DayOfWeek.Monday)
-                    som = som.AddDays(-1);
-            }
-
+            //AddDaysToList(sDate, eDate, days, daysToRun);
 
             return daysToRun;
+        }
+
+        private static void AddDaysToList(DateTime sDate, DateTime eDate, List<DayOfWeek> days, Dictionary<string, DateRange> daysToRun)
+        {
+            
+            var day = sDate;
+            while (day <= eDate)
+            {
+                if (days.Contains(day.DayOfWeek))
+                {
+                    // Holidays.Dates are found in Lean\Common\Global as a list
+                    if(!USHoliday.Dates.Contains(day))
+                        daysToRun.Add("d" + dateToString(day), new DateRange(dateToString(day), dateToString(day)));
+                }
+                day = day.AddDays(1);
+            }
+
+        }
+
+        private static void AddWeeksToList(DateTime sDate, DateTime eDate, Dictionary<string, DateRange> daysToRun)
+        {
+            #region "Do each week"
+
+            var startOfWeek = sDate;
+
+            while (startOfWeek < eDate)
+            {
+                var endOfWeek = startOfWeek;
+                while (endOfWeek.DayOfWeek != DayOfWeek.Friday)
+                {
+                    endOfWeek = endOfWeek.AddDays(1);
+                }
+                if (USHoliday.Dates.Contains(endOfWeek))
+                    endOfWeek = endOfWeek.AddDays(-1);
+                if (endOfWeek > eDate)
+                    endOfWeek = eDate;
+                daysToRun.Add("w" + dateToString(startOfWeek) + "-" + dateToString(endOfWeek),
+                    new DateRange(dateToString(startOfWeek), dateToString(endOfWeek)));
+
+                startOfWeek = endOfWeek;
+                while (startOfWeek.DayOfWeek != DayOfWeek.Monday)
+                    startOfWeek = startOfWeek.AddDays(1);
+                if (USHoliday.Dates.Contains(startOfWeek))
+                {
+                    startOfWeek = startOfWeek.AddDays(1);
+                }
+            }
+
+            #endregion
+        }
+
+        private static void AddMonthsToList(DateTime sDate, DateTime eDate, List<DayOfWeek> days, Dictionary<string, DateRange> daysToRun)
+        {
+            #region "Do each month"
+
+            // move sDate to first of next month
+            var startOfMonth = sDate;
+
+
+            var ed = eDate;
+            while (startOfMonth < ed)
+            {
+                DateTime endOfMonth;
+                if (startOfMonth.Month == 12)
+                {
+                    endOfMonth = new DateTime(startOfMonth.Year, startOfMonth.Month, 31);
+                }
+                else
+                {
+                    endOfMonth = new DateTime(startOfMonth.Year, startOfMonth.Month + 1, 1);
+                    endOfMonth = endOfMonth.AddDays(-1); //last day of month
+                }
+                if (endOfMonth > ed)
+                    endOfMonth = ed;
+                if (USHoliday.Dates.Contains(endOfMonth))
+                    endOfMonth = endOfMonth.AddDays(-1);
+
+                while (!days.Contains(endOfMonth.DayOfWeek))
+                {
+                    endOfMonth = endOfMonth.AddDays(-1);
+                }
+                daysToRun.Add("m" + dateToString(startOfMonth) + "-" + dateToString(endOfMonth),
+                    new DateRange(dateToString(startOfMonth), dateToString(endOfMonth)));
+                startOfMonth = endOfMonth;
+                while (startOfMonth.Day != 1)
+                    startOfMonth = startOfMonth.AddDays(1);
+                while (!days.Contains(startOfMonth.DayOfWeek))
+                {
+                    startOfMonth = startOfMonth.AddDays(1);
+                }
+                if (USHoliday.Dates.Contains(startOfMonth))
+                    startOfMonth = startOfMonth.AddDays(1);
+
+            }
+
+            #endregion
+
+
         }
 
         private static string dateToString(DateTime d)
@@ -435,17 +509,17 @@ namespace Optimization
             return rc;
         }
 
-        private static double RunAlgorithm(List<string> algos, Dictionary<string, DateRange> daysDictionary, List<string> symbolsList)
+        private static double RunAlgorithm(List<string> algos, Dictionary<string, DateRange> daysDictionary, List<string> symbolsList, decimal size, decimal tolerance)
         {
 
             var sum_sharpe = 0.0;
-            foreach (string s in algos)
+            foreach (string algoname in algos)
             {
                 foreach (string key in daysDictionary.Keys)
                 {
                     foreach (string sym in symbolsList)
                     {
-                        var val = s;
+                        var val = algoname;
                         var startDate = daysDictionary[key].startDate;
                         var endDate = daysDictionary[key].endDate;
                         AppDomain ad = null;
@@ -453,7 +527,7 @@ namespace Optimization
                         Console.Write("Running algorithm {0} for: {1} to {2}", val, startDate, endDate);
                         try
                         {
-                            sum_sharpe += (double)rc.Run(val, startDate, endDate, sym);
+                            sum_sharpe += (double)rc.Run(val, startDate, endDate, sym, size, tolerance);
                         }
                         catch (Exception e)
                         {
@@ -464,22 +538,22 @@ namespace Optimization
                         // After the Lean Engine has run and is deallocated,
                         // rename my custom mylog.csv file to include the algorithm name.
                         //  mylog.csv is written in the algorithm.  Replace with your custom logs.
-                        try
-                        {
-                            string f = AssemblyLocator.ExecutingDirectory();
-                            string sourcefile = f + @"mylog.csv";
-                            if (File.Exists(sourcefile))
-                            {
-                                string destfile = f + string.Format(@"mylog{0}.csv", sym);
-                                if (File.Exists(destfile))
-                                    File.Delete(destfile);
-                                File.Move(sourcefile, destfile);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                        }
+                        //try
+                        //{
+                        //    string f = AssemblyLocator.ExecutingDirectory();
+                        //    string sourcefile = f + @"mylog.csv";
+                        //    if (File.Exists(sourcefile))
+                        //    {
+                        //        string destfile = f + string.Format(@"mylog{0}{1}.csv",algoname, sym);
+                        //        if (File.Exists(destfile))
+                        //            File.Delete(destfile);
+                        //        File.Move(sourcefile, destfile);
+                        //    }
+                        //}
+                        //catch (Exception e)
+                        //{
+                        //    Console.WriteLine(e);
+                        //}
                         runnumber++;
 
                     }

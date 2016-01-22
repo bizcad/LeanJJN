@@ -57,8 +57,11 @@
     <Compile Include="CustomIndicators\HullMovingAverage.cs" />
     <Compile Include="CustomIndicators\InstantaneousTrend.cs" />
     <Compile Include="CustomIndicators\InverseFisherTransform.cs" />
+    <Compile Include="CustomIndicators\MarketMeanessIndex.cs" />
     <Compile Include="CustomIndicators\RelativeVigorIndex.cs" />
     <Compile Include="CustomIndicators\SuperSmoother.cs" />
+    <Compile Include="CustomIndicators\TwoBarReversalIndicator.cs" />
+    <Compile Include="CustomIndicators\YangZhangVolatility.cs" />
     <Compile Include="DonchianChannel.cs" />
     <Compile Include="IchimokuKinkoHyo.cs" />
     <Compile Include="KeltnerChannels.cs" />

@@ -22,6 +22,6 @@ namespace QuantConnect.Algorithm.CSharp
             decimal BetSize(Symbol symbol);
             decimal BetSize(Symbol symbol, decimal currentPrice, decimal transactionSize);
             decimal BetSize(Symbol symbol, decimal currentPrice, decimal transactionSize, SignalInfo signalInfo);
-//            decimal BetSize(Symbol symbol, decimal currentPrice, decimal transactionSize, SignalInfo signalInfo, OrderTransactionProcessor proformaProcessor);
+            //            decimal BetSize(Symbol symbol, decimal currentPrice, decimal transactionSize, SignalInfo signalInfo, OrderTransactionProcessor proformaProcessor);
         }
 }

@@ -20,5 +20,6 @@ namespace QuantConnect.Algorithm.CSharp
         public decimal nTrig { get; set; }
         public RollingWindow<IndicatorDataPoint> Price;
         public InstantaneousTrend trend;
+        public MarketMeanessIndex mmi;
     }
 }

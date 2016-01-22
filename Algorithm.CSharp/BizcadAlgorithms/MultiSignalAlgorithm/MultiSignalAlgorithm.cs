@@ -26,8 +26,8 @@ namespace QuantConnect.Algorithm.CSharp
 
         #region "Variables"
         DateTime startTime = DateTime.Now;
-        private DateTime _startDate = new DateTime(2016, 1, 4);
-        private DateTime _endDate = new DateTime(2016, 1, 8);
+        private DateTime _startDate = new DateTime(2016, 1, 11);
+        private DateTime _endDate = new DateTime(2016, 1, 12);
         //private DateTime _startDate = new DateTime(2015, 8, 11);
         //private DateTime _endDate = new DateTime(2015, 8, 14);
         //private DateTime _startDate = new DateTime(2015, 5, 19);
@@ -100,7 +100,7 @@ namespace QuantConnect.Algorithm.CSharp
         private readonly OrderTransactionFactory _orderTransactionFactory;
 
         private string ondataheader =
-            @"Symbol, Time,BarCount,Volume, Open,High,Low,Close,,,Time,Price,Trend, Trigger, orderSignal, Comment,, EntryPrice, Exit Price,Unrealized,Order Id, Owned, TradeNet, Portfolio";
+            @"Symbol, Time,BarCount,Volume, Open,High,Low,Close,,Time,Price,Trend, Trigger, MMI, orderSignal, Comment,, EntryPrice, IsActive,Unrealized,Order_Id, Owned, TradeNet, Portfolio";
 
         private SigC _scig5C = new SigC();
 
@@ -192,11 +192,11 @@ namespace QuantConnect.Algorithm.CSharp
 
 
             //Initialize dates
-            //sd = Config.Get("start-date");
-            //ed = Config.Get("end-date");
+            var sd = Config.Get("start-date");
+            var ed = Config.Get("end-date");
 
-            //_startDate = new DateTime(Convert.ToInt32(sd.Substring(0, 4)), Convert.ToInt32(sd.Substring(4, 2)), Convert.ToInt32(sd.Substring(6, 2)));
-            //_endDate = new DateTime(Convert.ToInt32(ed.Substring(0, 4)), Convert.ToInt32(ed.Substring(4, 2)), Convert.ToInt32(ed.Substring(6, 2)));
+            _startDate = new DateTime(Convert.ToInt32(sd.Substring(0, 4)), Convert.ToInt32(sd.Substring(4, 2)), Convert.ToInt32(sd.Substring(6, 2)));
+            _endDate = new DateTime(Convert.ToInt32(ed.Substring(0, 4)), Convert.ToInt32(ed.Substring(4, 2)), Convert.ToInt32(ed.Substring(6, 2)));
 
 
             SetStartDate(_startDate);
@@ -216,7 +216,6 @@ namespace QuantConnect.Algorithm.CSharp
 
             foreach (Symbol s in Securities.Keys)
             {
-                Symbols.Add(s);
                 signalInfos.Add(new SignalInfo()
                 {
                     Id = id++,
@@ -231,7 +230,9 @@ namespace QuantConnect.Algorithm.CSharp
                     Comment = string.Empty,
                     nTrig = 0,
                     Price = new RollingWindow<IndicatorDataPoint>(14),
-                    trend = new InstantaneousTrend(s.Value, 7, .24m)
+                    trend = new InstantaneousTrend(s.Value, 7, .24m),
+                    mmi = new MarketMeanessIndex("MMI", 22)
+                    
                 });
             }
 
@@ -284,6 +285,7 @@ namespace QuantConnect.Algorithm.CSharp
                     signalInfo.Price.Add(idp(time, data.Value.Close));
                     // Update the indicators
                     signalInfo.trend.Update(idp(time, signalInfo.Price[0].Value));
+                    signalInfo.mmi.Update(idp(time, data.Value.Close));
                 }
                 // Get the OrderSignal from the Sig9
                 GetOrderSignals(data, minuteSignalInfos);
@@ -314,12 +316,13 @@ namespace QuantConnect.Algorithm.CSharp
             sharesOwned = Portfolio[data.Key].Quantity;
             #region "biglog"
 
+            //Log(data.Key.Value);
             string logmsg =
                 string.Format(
                     "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9},{10},{11},{12},{13},{14},{15},{16},{17},{18},{19},{20}" +
                     ",{21},{22},{23},{24},{25},{26},{27},{28},{29},{30},{31},{32}",
                     data.Key.Value,
-                    time,
+                    this.Time.ToString(),
                     barcount,
                     data.Value.Volume,
                     data.Value.Open,
@@ -327,11 +330,11 @@ namespace QuantConnect.Algorithm.CSharp
                     data.Value.Low,
                     data.Value.Close,
                     "",
-                    "",
                     time.ToShortTimeString(),
                     signalInfos[0].Price[0].Value,
                     signalInfos[0].trend.Current.Value,
                     signalInfos[0].nTrig,
+                    signalInfos[0].mmi.Current.Value,
                     signalInfos[0].Value,
                     comment,
                     "",
@@ -374,7 +377,7 @@ namespace QuantConnect.Algorithm.CSharp
                     minuteHeader.AppendLine(",P/L");
                     minuteHeaderFlag = false;
                 }
-                barcount = 0;
+                //barcount = 0;
             }
         }
 
@@ -424,11 +427,11 @@ namespace QuantConnect.Algorithm.CSharp
 
         private void AlterShortLimit(KeyValuePair<Symbol, TradeBar> data, OrderTicket liveticket, SignalInfo currentSignalInfo)
         {
-            Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, liveticket.OrderId));
+            //Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, liveticket.OrderId));
             if (currentSignalInfo.TradeAttempts++ > 3)
             {
                 liveticket.Cancel();
-                Log(string.Format("Order {0} cancellation sent. Trade attempts > 3.", liveticket.OrderId));
+                //Log(string.Format("Order {0} cancellation sent. Trade attempts > 3.", liveticket.OrderId));
 
             }
 
@@ -436,11 +439,11 @@ namespace QuantConnect.Algorithm.CSharp
 
         private void AlterLongLimit(KeyValuePair<Symbol, TradeBar> data, OrderTicket liveticket, SignalInfo currentSignalInfo)
         {
-            Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, liveticket.OrderId));
+            //Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, liveticket.OrderId));
             if (currentSignalInfo.TradeAttempts++ > 3)
             {
                 liveticket.Cancel();
-                Log(string.Format("Order {0} cancellation sent. Trade attempts > 3.", liveticket.OrderId));
+                //Log(string.Format("Order {0} cancellation sent. Trade attempts > 3.", liveticket.OrderId));
 
             }
         }
@@ -534,8 +537,6 @@ namespace QuantConnect.Algorithm.CSharp
         /// <param name="orderEvent">OrderEvent - the order event</param>
         private void ProcessOrderEvent(OrderEvent orderEvent)
         {
-            IEnumerable<OrderTicket> tickets;
-
             //add to the list of order events which is saved to a file when running locally 
             //  I will use this file to test Stefano Raggi's code
 
@@ -546,7 +547,7 @@ namespace QuantConnect.Algorithm.CSharp
                 currentSignalInfo.Status = orderEvent.Status;
 
 
-            tickets = Transactions.GetOrderTickets(t => t.OrderId == orderId);
+            IEnumerable<OrderTicket> tickets = Transactions.GetOrderTickets(t => t.OrderId == orderId);
 
             switch (orderEvent.Status)
             {
@@ -561,14 +562,14 @@ namespace QuantConnect.Algorithm.CSharp
 
                         nEntryPrice = Portfolio[orderEvent.Symbol].HoldStock ? Portfolio[orderEvent.Symbol].AveragePrice : 0;
                         currentSignalInfo.TradeAttempts++;
-                        Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, orderEvent.OrderId));
+                        //Log(string.Format("Trade Attempts: {0} OrderId {1}", currentSignalInfo.TradeAttempts, orderEvent.OrderId));
                     }
 
                     break;
                 case OrderStatus.Canceled:
                     if (currentSignalInfo != null)
                     {
-                        Log(string.Format("Order {0} cancelled.", orderEvent.OrderId));
+                        //Log(string.Format("Order {0} cancelled.", orderEvent.OrderId));
                         currentSignalInfo.IsActive = true;
                         currentSignalInfo.TradeAttempts = 0;
                     }
@@ -578,8 +579,8 @@ namespace QuantConnect.Algorithm.CSharp
                     if (currentSignalInfo != null)
                     {
                         currentSignalInfo.IsActive = true;
-                        if (currentSignalInfo.TradeAttempts > 0)
-                            Log(string.Format("Order Filled OrderId {0} on attempt {1}", orderEvent.OrderId, currentSignalInfo.TradeAttempts));
+                        //if (currentSignalInfo.TradeAttempts > 0)
+                        //    Log(string.Format("Order Filled OrderId {0} on attempt {1}", orderEvent.OrderId, currentSignalInfo.TradeAttempts));
                         currentSignalInfo.TradeAttempts = 0;
 
                     }
@@ -611,117 +612,6 @@ namespace QuantConnect.Algorithm.CSharp
             }
         }
 
-        //private string GetQuotes(string symbol)
-        //{
-        //    string ret = string.Empty;
-        //    try
-        //    {
-        //        HttpRequestMessage request = CreateGetRequest(symbol);
-        //        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        //        request.Headers.Add("Authorization", String.Format("Bearer {0}", Config.Get("tradier-access-token")));
-
-        //        //using (var client = new HttpClient())
-        //        //{
-        //        //    HttpResponseMessage response = client.SendAsync(request).Result;
-        //        //    if (!response.IsSuccessStatusCode)
-        //        //    {
-        //        //        string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-        //        //    }
-        //        //    ret = response.Content.ReadAsStringAsync().Result;
-        //        //}
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex.Message);
-        //    }
-        //    return ret;
-        //}
-        //private HttpRequestMessage CreateGetRequest(string symbol)
-        //{
-        //    var request = new HttpRequestMessage();
-        //    request.Method = HttpMethod.Get;
-        //    string _apiHost = @"https://sandbox.tradier.com/";
-        //    string uriStem = @"v1/markets/quotes";
-        //    StringBuilder sb = new StringBuilder();
-        //    sb.Append("symbols=");
-        //    sb.Append(symbol);
-
-        //    request.RequestUri = new Uri(String.Format("{0}{1}?{2}", _apiHost, uriStem, sb.ToString()));
-        //    return request;
-        //}
-
-        //private void SendMessage(Type type, string message)
-        //{
-        //    Message msg = new Message();
-        //    msg.Id = 1;
-        //    msg.Contents = message;
-
-        //    var request = new HttpRequestMessage();
-        //    request.Method = HttpMethod.Post;
-        //    string _apiHost = @"http://localhost:63144/";
-        //    string uriStem = @"api/Message";
-
-        //    request.RequestUri = new Uri(String.Format("{0}{1}", _apiHost, uriStem));
-        //    request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
-        //    using (var client = new HttpClient())
-        //    {
-        //        HttpResponseMessage response = client.PostAsJsonAsync(request.RequestUri.ToString(), msg).Result;
-        //        if (!response.IsSuccessStatusCode)
-        //        {
-        //            string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-        //            Log(r);
-        //        }
-        //        else
-        //        {
-        //            using (HttpContent content = response.Content)
-        //            {
-        //                // ... Read the string.
-        //                string result = content.ReadAsStringAsync().Result;
-        //                QCMessage resultMessage = JsonConvert.DeserializeObject<QCMessage>(result);
-        //                int id = resultMessage.Id;
-
-        //                // ... Display the result.
-        //                //if (result != null &&
-        //                //result.Length >= 50)
-        //                //{
-        //                //    Console.WriteLine(result.Substring(0, 50) + "...");
-        //                //}
-        //            }
-        //        }
-        //    }
-            
-        //}
-        //private void SendTransaction(OrderTransaction t)
-        //{
-        //    string j = JsonConvert.SerializeObject(t);
-        //    try
-        //    {
-        //        using (var client = new HttpClient())
-        //        {
-
-        //            var uri = new Uri(@"http://localhost:55293/");
-        //            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        //            client.BaseAddress = uri;
-
-        //            //HttpResponseMessage response = client.PostAsJsonAsync("api/OrderTransaction", t).Result;
-        //            //if (!response.IsSuccessStatusCode)
-        //            //{
-        //            //    string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-        //            //    Log(r);
-        //            //}
-        //        }
-        //    }
-        //    catch (AggregateException aggregateException)
-        //    {
-        //        WebSiteAvailable = false;
-        //        StringBuilder sb = new StringBuilder();
-        //        sb.AppendLine();
-        //        SummarizeExceptions(sb, aggregateException);
-        //        sb.AppendLine(aggregateException.StackTrace);
-        //        Log(sb.ToString());
-        //    }
-        //}
 
         private static void SummarizeExceptions(StringBuilder sb, Exception ex)
         {
@@ -734,28 +624,7 @@ namespace QuantConnect.Algorithm.CSharp
             }
         }
 
-        //private void GetTransasctions()
-        //{
-        //    try
-        //    {
-        //        using (var client = new HttpClient())
-        //        {
-        //            var uri = new Uri(@"http://localhost:63144/");
-        //            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-        //            client.BaseAddress = uri;
 
-        //            HttpResponseMessage response = client.GetAsync("api/QCMessage/1").Result;
-        //            if (!response.IsSuccessStatusCode)
-        //            {
-        //                string r = "Error Code" + response.StatusCode + " : Message - " + response.ReasonPhrase;
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine(ex.Message);
-        //    }
-        //}
 
         #endregion
 
@@ -850,88 +719,6 @@ namespace QuantConnect.Algorithm.CSharp
         }
 
 
-        /// <summary>
-        /// This function is called prior to calling the GetOrderSignals to check to see if a ticket was filled
-        /// If the ticket did not fill within one bar, cancel it and assume the market moved away from the limit order
-        /// 
-        /// It re
-        /// </summary>
-
-        //private List<ProformaOrderTicket> HandleTickets()
-        //{
-        //List<ProformaOrderTicket> proformaOrderTickets = new List<ProformaOrderTicket>();
-        ////if (maketrade)
-        ////{
-        //// process a real order
-        //foreach (OrderTicket queuedTicket in _ticketsQueue)
-        //{
-        //    ProformaOrderTicket proformaLiveTicket = new ProformaOrderTicket();
-
-        //    // Check the ticket against the Transactions version of the ticket
-        //    IEnumerable<OrderTicket> livetickets = Transactions.GetOrderTickets(t => t.OrderId == queuedTicket.OrderId);
-
-        //    if (livetickets != null)
-        //    {
-        //        foreach (OrderTicket liveticket in livetickets)
-        //        {
-        //            proformaLiveTicket.Status = liveticket.Status;
-        //            proformaLiveTicket.OrderId = liveticket.OrderId;
-        //            proformaLiveTicket.Symbol = liveticket.Symbol;
-        //            proformaLiveTicket.Source = liveticket.Tag;
-        //            proformaLiveTicket.TicketTime = liveticket.Time;
-        //            proformaLiveTicket.Security_Type = liveticket.SecurityType;
-        //            proformaLiveTicket.Tag = liveticket.Tag;
-        //            proformaLiveTicket.TicketOrderType = liveticket.OrderType;
-
-        //            switch (liveticket.Status)
-        //            {
-        //                case OrderStatus.Canceled:
-        //                case OrderStatus.New:
-        //                case OrderStatus.None:
-        //                    break;
-        //                case OrderStatus.Invalid:
-        //                    proformaLiveTicket.ErrorMessage = liveticket.GetMostRecentOrderResponse().ErrorMessage;
-        //                    break;
-        //                case OrderStatus.Submitted:
-        //                    liveticket.Cancel();
-        //                    proformaLiveTicket.Status = OrderStatus.Canceled;
-        //                    proformaLiveTicket.QuantityFilled = 0; // they are probably already 0
-        //                    proformaLiveTicket.AverageFillPrice = 0;
-        //                    break;
-        //                case OrderStatus.Filled:
-        //                case OrderStatus.PartiallyFilled:
-
-        //                    #region logging
-        //                    if (Portfolio[symbol].Invested)
-        //                    {
-        //                        nEntryPrice = Portfolio[symbol].IsLong ? liveticket.AverageFillPrice : liveticket.AverageFillPrice * -1;
-        //                        nExitPrice = 0;
-        //                    }
-        //                    else
-        //                    {
-        //                        nExitPrice = liveticket.AverageFillPrice;
-        //                        nEntryPrice = 0;
-        //                    }
-        //                    #endregion
-        //                    proformaLiveTicket.Direction = liveticket.Quantity > 0 ? OrderDirection.Buy : OrderDirection.Sell;
-        //                    proformaLiveTicket.Status = OrderStatus.Filled;
-        //                    proformaLiveTicket.QuantityFilled = (int)liveticket.QuantityFilled;
-        //                    proformaLiveTicket.AverageFillPrice = liveticket.AverageFillPrice;
-        //                    break;
-        //            }
-        //        }
-        //    }
-        //    else
-        //    {
-        //        proformaLiveTicket.ErrorMessage =
-        //            string.Format("Ticket with Id {0} could not be found in Transactions.", queuedTicket.OrderId);
-
-
-        //    }
-        //    proformaOrderTickets.Add(proformaLiveTicket);
-        //}
-        //return proformaOrderTickets;
-        //}
 
         private decimal GetBetSize(Symbol symbol, SignalInfo signalInfo)
         {
@@ -1088,10 +875,10 @@ namespace QuantConnect.Algorithm.CSharp
             symbolsstring = symbolsstring.Substring(0, symbolsstring.LastIndexOf(",", System.StringComparison.Ordinal));
             string debugstring =
                 string.Format(
-                    "\nAlgorithm Name: {0}\n Symbol: {1}\n Ending Portfolio Value: {2} \n lossThreshhold = {3}\n Start Time: {4}\n End Time: {5}",
-                    this.GetType().Name, symbolsstring, Portfolio.TotalPortfolioValue, lossThreshhold, startTime,
-                    DateTime.Now);
-            Logging.Log.Trace(debugstring);
+                    "\nAlgorithm Name: {0}\n Symbol: {1}\n Ending Portfolio Value: {2} \n lossThreshhold = {3}\n Start Time: {4} \t {5} \n End Time: {6} \t {7}",
+                    this.GetType().Name, symbolsstring, Portfolio.TotalPortfolioValue, lossThreshhold, startTime, _startDate,
+                    DateTime.Now, _endDate);
+            Log(debugstring);
 
             #region logging
 
@@ -1112,21 +899,6 @@ namespace QuantConnect.Algorithm.CSharp
 
             #endregion
         }
-
-        //private IndicatorDataPoint CalculateNewTrendHistoryValue(int barcount, DateTime time, RollingWindow<IndicatorDataPoint> price, InstantaneousTrend tr)
-        //{
-        //    //if (barcount < 7 && barcount > 2)
-        //    //{
-        //    //    return (idp(time, (price[0].Value + 2 * price[1].Value + price[2].Value) / 4));
-        //    //}
-        //    //else
-        //    //{
-        //    //    return (idp(time, tr.Current.Value)); //add last iteration value for the cycle
-        //    //}
-        //    if (!trendHistory.IsReady)
-        //        return idp(time, price[0].Value);
-        //    return (idp(time, tr.Current.Value)); //add last iteration value for the cycle
-        //}
 
         #endregion
 
