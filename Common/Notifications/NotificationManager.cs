@@ -140,6 +140,16 @@ namespace QuantConnect.Notifications
         /// <param name="data">Data to send in body JSON encoded (optional)</param>
         public bool Web(string address, object data = null)
         {
+            string jsonmessage = Newtonsoft.Json.JsonConvert.SerializeObject(data);
+            WebClient client = new WebClient();
+            client.Encoding = System.Text.Encoding.UTF8;
+            client.Headers.Add("Content-Type", "application/json");
+
+            // Posts a message to the web site
+            string reply = client.UploadString(address, jsonmessage);
+
+
+
             if (!_liveMode) return false;
             var allow = Allow();
             if (allow)

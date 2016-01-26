@@ -76,8 +76,8 @@ namespace QuantConnect.Algorithm.CSharp
         public override void Initialize()
         {
             //Initialize dates
-            _startDate = new DateTime(2015, 12, 14);
-            _endDate = new DateTime(2015, 12, 14);
+            _startDate = new DateTime(2016, 1, 11);
+            _endDate = new DateTime(2016, 1, 14);
             SetStartDate(_startDate);
             SetEndDate(_endDate);
             SetCash(_portfolioAmount);
@@ -229,7 +229,6 @@ namespace QuantConnect.Algorithm.CSharp
                     Math.Round(signalInfos[0].nTrig, 4),
                     signalInfos[0].Value
                     );
-            
 
             
             //tradeprofit = 0;
@@ -241,7 +240,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             
             EmailTradeBarMessage(logmsg);
-            //PostMessage(typeof (Message), logmsg);
+            PostMessage(typeof (Message), logmsg);
             //mylog.Debug(logmsg);
             #endregion
             //tradeprofit = 0;
@@ -258,25 +257,24 @@ namespace QuantConnect.Algorithm.CSharp
         private void EmailTradeBarMessage(string logmsg)
         {
             Log(logmsg);
-            //Message m = new Message {Id = barcount, MessageType = "logmsg", Contents = logmsg};
-            //string json = JsonConvert.SerializeObject(m);
-            //Notify.Email("quantconnect@bizcad.com", string.Format("TradeBars For: {0} {1}", Time.ToShortDateString(), Time.ToLongTimeString()), json, null);
+            Message m = new Message {Id = barcount, MessageType = "logmsg", Contents = logmsg};
+            string json = JsonConvert.SerializeObject(m);
+            Notify.Email("quantconnect@bizcad.com", string.Format("TradeBars For: {0} {1}", Time.ToShortDateString(), Time.ToLongTimeString()), json, json);
             
         }
 
         private void PostMessage(Type type, string logmsg)
         {
-            Message message = new Message();
-            message.Id = 0;
-            message.Contents = logmsg;
-            string jsonmessage = Newtonsoft.Json.JsonConvert.SerializeObject(message);
-            WebClient client = new WebClient();
-            client.Encoding = System.Text.Encoding.UTF8;
-            client.Headers.Add("Content-Type", "application/json");
+            Message message = new Message
+            {
+                Id = 0,
+                MessageType = "Message",
+                Contents = logmsg
+            };
+            string address = @"http://bizcadsignalrchat.azurewebsites.net/Messages/Create";
+            //string address = @""http://localhost:64527/Messages/Create/";
 
-            // Posts a message to the web site
-            string reply = client.UploadString("http://localhost:64253/api/Messages/", jsonmessage);
-            //string reply = client.GetMessage("http://localhost:64253/api/Messages/", jsonmessage);
+            Notify.Web(address, message);
         }
 
         private void HandlePartiallyFilled(KeyValuePair<Symbol, TradeBar> data, SignalInfo currentSignalInfo)

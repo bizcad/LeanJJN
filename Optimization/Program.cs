@@ -305,13 +305,13 @@ namespace Optimization
             //algos.Add("InstantaneousTrendAlgorithmQC");
             //algos.Add("InstantaneousTrendAlgorithm");
             //algos.Add("MultiSignalAlgorithm");
-            //algos.Add("MultiSignalAlgorithmQC");
+            algos.Add("MultiSignalAlgorithmQC");
             //algos.Add("ITrendAlgorithm");
             //algos.Add("ITrendAlgorithmNickVariation");
             //algos.Add("MultiSignalAlgorithm");
             //algos.Add("MeanReversionAlgorithm");
             //algos.Add("MultisymbolAlgorithm");
-            algos.Add("TwoBarReversalAlgorithm");
+            //algos.Add("TwoBarReversalAlgorithm");
 
             var daysToRun = GenerateDaysToRun();
 
@@ -332,12 +332,12 @@ namespace Optimization
 
             //    }
             //}
-            symbList.Add("TLT");
+            symbList.Add("WYNN");
 
             decimal size = .19m;
             decimal tolerance = .11m;
-            for (size = .1m; size < .4m; size += .01m)
-                for (tolerance = .1m; tolerance < .2m; tolerance += .01m)
+            //for (size = .1m; size < .4m; size += .01m)
+            //    for (tolerance = .1m; tolerance < .2m; tolerance += .01m)
                     RunAlgorithm(algos, daysToRun, symbList, size, tolerance);
         }
 
@@ -347,8 +347,8 @@ namespace Optimization
             Dictionary<string, DateRange> daysToRun = new Dictionary<string, DateRange>();
             List<DayOfWeek> days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-            DateTime sDate = new DateTime(2015, 5, 19);
-            DateTime eDate = new DateTime(2016, 1, 12);
+            DateTime sDate = new DateTime(2016, 1, 11);
+            DateTime eDate = new DateTime(2016, 1, 15);
 
             daysToRun.Add("All", new DateRange(dateToString(sDate), dateToString(eDate)));
 

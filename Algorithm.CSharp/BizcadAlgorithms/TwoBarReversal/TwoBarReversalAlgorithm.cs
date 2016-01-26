@@ -301,19 +301,14 @@ namespace QuantConnect.Algorithm.CSharp
 
 
                     }
-                    //nEntryPrice = Portfolio[orderEvent.Symbol].HoldStock ? Portfolio[orderEvent.Symbol].AveragePrice : 0;
+                    
                     IEnumerable<OrderTicket> tickets = Transactions.GetOrderTickets(t => t.OrderId == orderEvent.OrderId);
                     if (tickets != null)
                     {
-                        foreach (OrderTicket ticket in tickets)
+                        foreach (var t in from ticket in tickets let transactionFactory = new OrderTransactionFactory((QCAlgorithm)this) select transactionFactory.Create(orderEvent, ticket, false))
                         {
-                            #region "save the ticket as a OrderTransacton"
-                            OrderTransactionFactory transactionFactory = new OrderTransactionFactory((QCAlgorithm)this);
-                            OrderTransaction t = transactionFactory.Create(orderEvent, ticket, false);
                             _transactions.Add(t);
                             _orderTransactionProcessor.ProcessTransaction(t);
-                            #endregion
-
                         }
                     }
                     break;
