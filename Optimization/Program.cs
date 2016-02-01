@@ -65,20 +65,23 @@ namespace Optimization
         /// <summary>
         /// Runs a Lean Engine
         /// </summary>
-        /// <param name="algorithmName">A parameter for the Lean Engine.</param>
-        /// <param name="startDate"></param>
-        /// <param name="endDate"></param>
-        /// <param name="symbols"></param>
+        /// <param name="algorithmName">A parameter for the Lean Engine which is injected into Config.</param>
+        /// <param name="startDate">An algorithm start date which is injected into Config</param>
+        /// <param name="endDate">An algorithm end date which is injected into Config</param>
+        /// <param name="symbols">A csv list of symbols injected into Config</param>
+        /// <param name="size">A decimal value injected into Config</param>
+        /// <param name="tolerance">A decimal value injected into Config</param>
         /// <returns></returns>
         public decimal Run(string algorithmName, string startDate, string endDate, string symbols, decimal size, decimal tolerance)
         {
-
+            // Inject the parameters into Config before running the algorithm
             Config.Set("start-date", startDate);
             Config.Set("end-date", endDate);
             Config.Set("symbols", symbols);
             Config.Set("size", size.ToString(CultureInfo.InvariantCulture));
             Config.Set("tolerance", tolerance.ToString(CultureInfo.InvariantCulture));
 
+            // Launch a Lean instance and run algorithmName
             LaunchLean(algorithmName);
 
             if (_resultshandler != null)
@@ -100,6 +103,10 @@ namespace Optimization
             }
             return -1.0m;
         }
+        /// <summary>
+        /// Instantiate a Lean instance and run it.
+        /// </summary>
+        /// <param name="algorithm"></param>
         private static void LaunchLean(string algorithm)
         {
             // Set the algorithm in Config.  Here is where you can customize Config settings
@@ -189,6 +196,9 @@ namespace Optimization
 
             try
             {
+                /*
+                 * This is the guts of Optimization.  It runs a LeanEngine with the various parameters you set earlier
+                 */
                 var engine = new QuantConnect.Lean.Engine.Engine(leanEngineSystemHandlers, leanEngineAlgorithmHandlers, liveMode);
                 engine.Run(job, assemblyPath);
             }
@@ -204,7 +214,7 @@ namespace Optimization
                 Log.LogHandler.Dispose();
             }
         }
-
+        /* Depricated */
         /// <summary>
         /// Launches a Lean Engine using a parameter
         /// </summary>
@@ -299,26 +309,35 @@ namespace Optimization
             // Set up an AppDomain
             _ads = SetupAppDomain();
 
-            // Set up a list of algorithms to run
+            /* 
+             * Set up a list of algorithms to run
+             *  Each algorithm will be run in a separate Lean instance
+             */
             List<string> algos = new List<string>();
             //algos.Add("InstantTrendAlgorithmOriginal");
             //algos.Add("InstantaneousTrendAlgorithmQC");
             //algos.Add("InstantaneousTrendAlgorithm");
             //algos.Add("MultiSignalAlgorithm");
-            algos.Add("MultiSignalAlgorithmQC");
+            //algos.Add("MultiSignalAlgorithmQC");
             //algos.Add("ITrendAlgorithm");
             //algos.Add("ITrendAlgorithmNickVariation");
             //algos.Add("MultiSignalAlgorithm");
             //algos.Add("MeanReversionAlgorithm");
             //algos.Add("MultisymbolAlgorithm");
             //algos.Add("TwoBarReversalAlgorithm");
+            //algos.Add("FileLoggingSampleAlgorithm");
+            algos.Add("DonchianBreakout");
 
+            /*
+             * Generate the days to run the algorithm for
+             */
             var daysToRun = GenerateDaysToRun();
 
-            //string startDate = "20150519";
-            //string endDate = "20151106";
-
             List<string> symbList = new List<string>();
+
+            /*
+             * Read a list of symbols from a file.  The algo will be run on each symbol
+             */
             //using (var sr = new StreamReader(@"H:\GoogleFinanceData\NasdaqTop63.csv"))
             //{
             //    while (!sr.EndOfStream)
@@ -332,8 +351,13 @@ namespace Optimization
 
             //    }
             //}
-            symbList.Add("WYNN");
 
+            // Just add 1 symbol by hand for now
+            symbList.Add("SPY");
+
+            /*
+             * Uncomment the two for loops to push a size and tolerance value into the algorithm
+             */
             decimal size = .19m;
             decimal tolerance = .11m;
             //for (size = .1m; size < .4m; size += .01m)
@@ -341,21 +365,31 @@ namespace Optimization
                     RunAlgorithm(algos, daysToRun, symbList, size, tolerance);
         }
 
-
+        /// <summary>
+        /// Adds date ranges to the list of days to run the algorithm(s)
+        /// Each date range in the list will be run by the algorithm(s)
+        /// </summary>
+        /// <returns></returns>
         private static Dictionary<string, DateRange> GenerateDaysToRun()
         {
             Dictionary<string, DateRange> daysToRun = new Dictionary<string, DateRange>();
             List<DayOfWeek> days = new List<DayOfWeek> { DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday };
 
-            DateTime sDate = new DateTime(2016, 1, 11);
-            DateTime eDate = new DateTime(2016, 1, 15);
+            // Determine the start date and end date of the date range to add to the list of dates to run
+            DateTime sDate = new DateTime(2010, 1, 1);
+            DateTime eDate = new DateTime(2016, 1, 31);
 
+            // All adds the whole date range to the list of dates to run the algorithm will run 
             daysToRun.Add("All", new DateRange(dateToString(sDate), dateToString(eDate)));
 
+            // Add 1 month intervals to the list of dates to run
             //AddMonthsToList(sDate, eDate, days, daysToRun);
 
+            // Add 1 week interval to the list of dates to run
             //AddWeeksToList(sDate, eDate, daysToRun);
 
+            // Add a day interval to the list of dates to run.  
+            // Calling this function will run the algorithm ever day between sDate and eDate
             //AddDaysToList(sDate, eDate, days, daysToRun);
 
             return daysToRun;
@@ -509,6 +543,16 @@ namespace Optimization
             return rc;
         }
 
+        /// <summary>
+        /// Run the alist of algorithms for each date range, for each symbol, for each size and tolerance variation
+        /// You can potentially run Lean many times because of the 4 separate loops
+        /// </summary>
+        /// <param name="algos">A list of algorithms to run</param>
+        /// <param name="daysDictionary">A list of date ranges to run</param>
+        /// <param name="symbolsList">A list of symbols to run</param>
+        /// <param name="size">A size variable that can be read in your algorithm</param>
+        /// <param name="tolerance">A tolerance variable that can be read in your algorithm</param>
+        /// <returns>the sharp ratio from STATISTICS</returns>
         private static double RunAlgorithm(List<string> algos, Dictionary<string, DateRange> daysDictionary, List<string> symbolsList, decimal size, decimal tolerance)
         {
 
@@ -535,9 +579,11 @@ namespace Optimization
                         }
 
                         AppDomain.Unload(ad);
-                        // After the Lean Engine has run and is deallocated,
-                        // rename my custom mylog.csv file to include the algorithm name.
-                        //  mylog.csv is written in the algorithm.  Replace with your custom logs.
+                        /* After the Lean Engine has run and is deallocated,
+                           rename my custom mylog.csv file to include the algorithm name.
+                          mylog.csv is written in the algorithm.  Replace with your custom logs.
+                         * For example you could save a separate log.txt for each run of the Lean engine
+                         */
                         //try
                         //{
                         //    string f = AssemblyLocator.ExecutingDirectory();

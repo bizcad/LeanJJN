@@ -140,6 +140,7 @@ namespace QuantConnect.Notifications
         /// <param name="data">Data to send in body JSON encoded (optional)</param>
         public bool Web(string address, object data = null)
         {
+            // Added by Nick so backtest can send messages to a web site.
             string jsonmessage = Newtonsoft.Json.JsonConvert.SerializeObject(data);
             WebClient client = new WebClient();
             client.Encoding = System.Text.Encoding.UTF8;
@@ -149,7 +150,7 @@ namespace QuantConnect.Notifications
             string reply = client.UploadString(address, jsonmessage);
 
 
-
+            // Original from QuantConnect
             if (!_liveMode) return false;
             var allow = Allow();
             if (allow)

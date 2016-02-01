@@ -263,12 +263,17 @@ namespace QuantConnect.Algorithm.CSharp
             
         }
 
+        private void EmailTransactionMessage(string json)
+        {
+            Notify.Email("quantconnect@bizcad.com", string.Format("Order Filled: {0} {1}", Time.ToShortDateString(), Time.ToLongTimeString()), 
+                "A transaction occured. Details in attachment.", json);
+        }
         private void PostMessage(Type type, string logmsg)
         {
             Message message = new Message
             {
                 Id = 0,
-                MessageType = "Message",
+                MessageType = type.Name,
                 Contents = logmsg
             };
             string address = @"http://bizcadsignalrchat.azurewebsites.net/Messages/Create";
@@ -444,7 +449,7 @@ namespace QuantConnect.Algorithm.CSharp
 
             if (currentSignalInfo != null) currentSignalInfo.Status = orderEvent.Status;
             IEnumerable<OrderTicket> tickets = Transactions.GetOrderTickets(t => t.OrderId == orderId);
-
+            string msg = string.Empty;
             switch (orderEvent.Status)
             {
                 case OrderStatus.New:
@@ -452,12 +457,14 @@ namespace QuantConnect.Algorithm.CSharp
                 case OrderStatus.Submitted:
                     break;
                 case OrderStatus.Invalid:
-                    Log(string.Format("Order {0} invalidated attempt {1}. {2} shares at {3}, {4}",
+                    msg = string.Format("Order {0} invalidated attempt {1}. {2} shares at {3}, {4}",
                         orderEvent.OrderId,
                         currentSignalInfo.TradeAttempts,
                         orderEvent.FillQuantity,
                         orderEvent.FillPrice,
-                        orderEvent.Message));
+                        orderEvent.Message);
+                    Log(msg);
+                    EmailTradeBarMessage(msg);
                     break;
                 case OrderStatus.PartiallyFilled:
                     if (currentSignalInfo != null)
@@ -465,11 +472,13 @@ namespace QuantConnect.Algorithm.CSharp
 
                         nEntryPrice = Portfolio[orderEvent.Symbol].HoldStock ? Portfolio[orderEvent.Symbol].AveragePrice : 0;
                         currentSignalInfo.TradeAttempts++;
-                        Log(string.Format("Order {0} Partial Fill confirmed on attempt {1}. {2} shares at {3}",
+                        msg = string.Format("Order {0} Partial Fill confirmed on attempt {1}. {2} shares at {3}",
                             orderEvent.OrderId,
                             currentSignalInfo.TradeAttempts,
                             orderEvent.FillQuantity,
-                            orderEvent.FillPrice));
+                            orderEvent.FillPrice);
+                        Log(msg);
+                        EmailTradeBarMessage(msg);
                     }
 
                     break;
@@ -479,11 +488,14 @@ namespace QuantConnect.Algorithm.CSharp
                         Log(string.Format("Order {0} cancellation confirmed.", orderEvent.OrderId));
                         currentSignalInfo.IsActive = true;
                         currentSignalInfo.TradeAttempts = 0;
-                        Log(string.Format("Order {0} Holdings for {1}: {2} shares at {3}",
+                        msg = string.Format("Order {0} Holdings for {1}: {2} shares at {3}",
                             orderEvent.OrderId,
                             Portfolio[orderEvent.Symbol].Symbol.Value,
                             Portfolio[orderEvent.Symbol].Quantity,
-                            Portfolio[orderEvent.Symbol].AveragePrice));
+                            Portfolio[orderEvent.Symbol].AveragePrice);
+                        Log(msg);
+                        EmailTradeBarMessage(msg);
+
                     }
                     break;
                 case OrderStatus.Filled:
@@ -491,12 +503,14 @@ namespace QuantConnect.Algorithm.CSharp
                     if (currentSignalInfo != null)
                     {
                         currentSignalInfo.IsActive = true;
-                        Log(string.Format("Order {0} Fill {1} confirmed on attempt {2}. {3} shares at {4}",
+                        msg = string.Format("Order {0} Fill {1} confirmed on attempt {2}. {3} shares at {4}",
                             orderEvent.OrderId,
                             currentSignalInfo.Value,
                             currentSignalInfo.TradeAttempts,
                             orderEvent.FillQuantity,
-                            orderEvent.FillPrice));
+                            orderEvent.FillPrice);
+                        Log(msg);
+                        EmailTradeBarMessage(msg);
                         currentSignalInfo.TradeAttempts = 0;
                     }
                     nEntryPrice = Portfolio[orderEvent.Symbol].HoldStock ? Portfolio[orderEvent.Symbol].AveragePrice : 0;
@@ -509,13 +523,17 @@ namespace QuantConnect.Algorithm.CSharp
                             OrderTransactionFactory transactionFactory = new OrderTransactionFactory((QCAlgorithm)this);
                             OrderTransaction t = transactionFactory.Create(orderEvent, ticket, false);
                             _transactions.Add(t);
+                            string json = JsonConvert.SerializeObject(t);
+                            EmailTransactionMessage(json);
                             #endregion
                         }
-                        Log(string.Format("Order {0} Holdings for {1}: {2} shares at {3}",
+                        msg = string.Format("Order {0} Holdings for {1}: {2} shares at {3}",
                             orderEvent.OrderId,
                             Portfolio[orderEvent.Symbol].Symbol.Value,
                             Portfolio[orderEvent.Symbol].Quantity,
-                            Portfolio[orderEvent.Symbol].AveragePrice));
+                            Portfolio[orderEvent.Symbol].AveragePrice);
+                        Log(msg);
+                        EmailTradeBarMessage(msg);
                     }
                     break;
             }
@@ -690,7 +708,10 @@ namespace QuantConnect.Algorithm.CSharp
                     string.Format("Transactions For: {0}", Time.ToLongDateString()),
                     string.Format("Todays Date: {0} \nNumber of Transactions: {1}", Time.ToLongDateString(), _transactions.Count()),
                     attachment);
-
+                Notify.Email("quantconnect@bizcad.com",
+                    string.Format("Transactions For: {0}", Time.ToLongDateString()),
+                    string.Format("Todays Date: {0} \nNumber of Transactions: {1}", Time.ToLongDateString(), _transactions.Count()),
+                    attachment);
                 _transactions = new List<OrderTransaction>();
             }
 
